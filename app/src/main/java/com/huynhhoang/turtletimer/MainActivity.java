@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -46,11 +47,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TimerStatus timerStatus = TimerStatus.STOPPED;
 
     private ProgressBar progressBarCircle;
-    private EditText editTextMinute;
     private TextView textViewTime;
     private CountDownTimer countDownTimer;
     private Button buttonStartStop;
     private Button buttonCancel;
+    private Button buttonCancelTemp;
     private NumberPicker pickHour;
     private NumberPicker pickMin;
     private NumberPicker pickSec;
@@ -79,10 +80,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      */
     private void initViews() {
         progressBarCircle = (ProgressBar) findViewById(R.id.progressBarCircle);
-        editTextMinute = (EditText) findViewById(R.id.editTextMinute);
         textViewTime = (TextView) findViewById(R.id.textViewTime);
         buttonStartStop = (Button) findViewById(R.id.buttonStartStop);
         buttonCancel = (Button) findViewById(R.id.buttonCancel);
+        buttonCancelTemp = (Button) findViewById(R.id.buttonCancelTemp);
         pickHour = (NumberPicker) findViewById(R.id.pickHour);
         pickMin = (NumberPicker) findViewById(R.id.pickMin);
         pickSec = (NumberPicker) findViewById(R.id.pickSec);
@@ -104,7 +105,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         pickHour.setMaxValue(23);
 
         //Set numberpicker text and divider colors
-        setNumberPickerTextColor(pickHour, Color.WHITE);
+        setNumPickerTextColor(pickHour, Color.WHITE);
         setDividerColor(pickHour, Color.CYAN);
 
         //Gets whether the selector wheel wraps when reaching the min/max value.
@@ -117,7 +118,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 return String.format("%02d", i);
             }
         });
-
 
         //Set a value change listener for NumberPicker
         pickHour.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
@@ -133,10 +133,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //Populate NumberPicker values from minimum and maximum value range
         //Set the minimum and maximum value of NumberPicker
         pickMin.setMinValue(00);
-        pickMin.setMaxValue(60);
+        pickMin.setMaxValue(59);
 
         //Set numberpicker text and divider colors
-        setNumberPickerTextColor(pickMin, Color.WHITE);
+        setNumPickerTextColor(pickMin, Color.WHITE);
         setDividerColor(pickMin, Color.CYAN);
 
         //Gets whether the selector wheel wraps when reaching the min/max value.
@@ -164,10 +164,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //Populate NumberPicker values from minimum and maximum value range
         //Set the minimum and maximum value of NumberPicker
         pickSec.setMinValue(00);
-        pickSec.setMaxValue(60);
+        pickSec.setMaxValue(59);
 
         //Set numberpicker text and divider colors
-        setNumberPickerTextColor(pickSec, Color.WHITE);
+        setNumPickerTextColor(pickSec, Color.WHITE);
         setDividerColor(pickSec, Color.CYAN);
 
         //Gets whether the selector wheel wraps when reaching the min/max value.
@@ -221,8 +221,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             setProgressBarValues();
             // changing start text to pause text when clicked
             buttonStartStop.setText("PAUSE");
-            // making edit text not editable
-            editTextMinute.setEnabled(false);
             // changing the timer status to started
             timerStatus = TimerStatus.STARTED;
             // call to start the count down timer
@@ -230,6 +228,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             //set visibility of initLayout to Gone; make progressbar visible
             initLayout.setVisibility(View.GONE);
             proBarVisible();
+            cancelTimerGone();
+
+            //check if timer was set (has to be greater than 0 seconds)
+            if (timeCountInMilliSeconds == 0){
+                timeCountInMilliSeconds = 1;
+            }
 
             startCountDownTimer();
 
@@ -237,16 +241,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             // change PAUSE text to START when clicked
             buttonStartStop.setText("CONTINUE");
-            // making edit text editable
-            editTextMinute.setEnabled(true);
             // changing the timer status to stopped
             timerStatus = TimerStatus.PAUSED;
+            cancelTimerVisible();
             stopCountDownTimer();
 
         } else if (timerStatus == TimerStatus.PAUSED) {
             buttonStartStop.setText("PAUSE");
-            editTextMinute.setEnabled(false);
             timerStatus = TimerStatus.STARTED;
+            cancelTimerGone();
             continueCountDownTimer();
         }
 
@@ -254,13 +257,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void proBarVisible() {
         progressBarCircle.setVisibility(View.VISIBLE);
-        editTextMinute.setVisibility(View.VISIBLE);
         textViewTime.setVisibility(View.VISIBLE);
     }
 
     private void proBarGone() {
         progressBarCircle.setVisibility(View.GONE);
-        editTextMinute.setVisibility(View.GONE);
         textViewTime.setVisibility(View.GONE);
     }
 
@@ -269,17 +270,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      */
     private void setTimerValues() {
         int time = 0;
-//        if (!editTextMinute.getText().toString().isEmpty()) {
-//            // fetching value from edit text and type cast to integer
-//            time = Integer.parseInt(editTextMinute.getText().toString().trim());
-//        } else {
-//            // toast message to fill edit text
-//            Toast.makeText(getApplicationContext(), getString(R.string.message_minutes), Toast.LENGTH_LONG).show();
-//        }
-
+        //set time values
         time = (initHour * 60 * 60) + (initMin * 60) + (initSec);
+        // assigning values after converting to milliseconds
 
-//        // assigning values after converting to milliseconds
         timeCountInMilliSeconds = time * 1000;
     }
 
@@ -302,13 +296,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onFinish() {
 
-                textViewTime.setText(hmsTimeFormatter(timeCountInMilliSeconds));
-                // call to initialize the progress bar values
-                setProgressBarValues();
-                // making edit text editable
-                editTextMinute.setEnabled(true);
                 // changing the timer status to stopped
                 timerStatus = TimerStatus.STOPPED;
+                // cancel count down timer
+                cancelTimer();
             }
 
         }.start();
@@ -345,8 +336,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 textViewTime.setText(hmsTimeFormatter(timeCountInMilliSeconds));
                 // call to initialize the progress bar values
                 setProgressBarValues();
-                // making edit text editable
-                editTextMinute.setEnabled(true);
                 // changing the timer status to stopped
                 timerStatus = TimerStatus.STOPPED;
             }
@@ -368,16 +357,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         textViewTime.setText(hmsTimeFormatter(timeCountInMilliSeconds));
         // changing start text to pause text when clicked
         buttonStartStop.setText("START");
-        // making edit text not editable
-        editTextMinute.setEnabled(true);
         // changing the timer status to started
         timerStatus = TimerStatus.STOPPED;
         // call to start the count down timer
         countDownTimer.cancel();
 
         proBarGone();
+        cancelTimerGone();
         initLayout.setVisibility(View.VISIBLE);
 
+    }
+
+    private void cancelTimerVisible() {
+        buttonCancelTemp.setVisibility(View.GONE);
+        buttonCancel.setVisibility(View.VISIBLE);
+    }
+
+    private void cancelTimerGone() {
+        buttonCancelTemp.setVisibility(View.VISIBLE);
+        buttonCancel.setVisibility(View.GONE);
     }
 
 
@@ -393,7 +391,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /**
      * changes numberpicker text color
      */
-    public static boolean setNumberPickerTextColor(NumberPicker numberPicker, int color)
+    public static boolean setNumPickerTextColor(NumberPicker numberPicker, int color)
     {
         final int count = numberPicker.getChildCount();
         for(int i = 0; i < count; i++){
@@ -409,13 +407,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     return true;
                 }
                 catch(NoSuchFieldException e){
-                    Log.w("setNumberPickerTextColor", e);
+                    Log.w("setNumPickerTextColor", e);
                 }
                 catch(IllegalAccessException e){
-                    Log.w("setNumberPickerTextColor", e);
+                    Log.w("setNumPickerTextColor", e);
                 }
                 catch(IllegalArgumentException e){
-                    Log.w("setNumberPickerTextColor", e);
+                    Log.w("setNumPickerTextColor", e);
                 }
             }
         }
