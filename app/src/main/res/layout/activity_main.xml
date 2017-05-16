@@ -23,7 +23,7 @@
             android:indeterminate="false"
             android:max="100"
             android:progress="100"
-            android:progressDrawable="@drawable/drawable_circle_yellow"
+            android:progressDrawable="@drawable/drawable_circle_bar"
             android:rotation="-90"
             android:visibility="gone" />
 
@@ -41,8 +41,8 @@
             android:maxLines="1"
             android:minEms="5"
             android:text="1"
-            android:textColor="@color/colorYellow"
-            android:textColorHint="@color/colorYellow"
+            android:textColor="@color/colorTimer"
+            android:textColorHint="@color/colorTimer"
             android:visibility="gone" />
 
         <TextView
@@ -51,12 +51,13 @@
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:text="00:00:00"
-            android:textColor="@color/colorYellow"
+            android:textColor="@color/colorTimer"
             android:textSize="40sp"
             android:visibility="gone" />
 
 
         <LinearLayout
+            android:id="@+id/initLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
@@ -65,7 +66,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="3"
+                android:layout_weight="1"
                 android:weightSum="3"
                 android:orientation="vertical">
 
@@ -79,68 +80,14 @@
                     android:layout_height="0dp"
                     android:layout_weight="1"/>
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:paddingLeft="20dp"
-                    android:paddingRight="20dp"
-
-                    android:layout_weight="1"
-                    android:weightSum="3"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1"
-                        android:text="Hour"
-                        android:gravity="center"
-                        android:layout_marginLeft="25dp"
-                        android:layout_marginRight="25dp"
-                        android:textColor="@color/colorText"/>
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1"
-                        android:gravity="center"
-                        android:layout_marginLeft="25dp"
-                        android:layout_marginRight="25dp"
-                        android:text="Min"
-                        android:textColor="@color/colorText"/>
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1"
-                        android:gravity="center"
-                        android:layout_marginLeft="25dp"
-                        android:layout_marginRight="25dp"
-                        android:text="Sec"
-                        android:textColor="@color/colorText"/>
-
-                </LinearLayout>
-
             </LinearLayout>
 
-            <LinearLayout
+            <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:orientation="horizontal"
-                android:paddingLeft="20dp"
-                android:paddingRight="20dp"
-                android:paddingBottom="20dp"
-                android:layout_weight="7"
-                android:weightSum="3">
-
-                <NumberPicker
-                    android:id="@+id/pickHour"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_marginLeft="25dp"
-                    android:layout_marginRight="25dp"
-                    android:layout_weight="1"
-                    android:descendantFocusability="blocksDescendants"/>
+                android:padding="20dp"
+                android:layout_weight="8">
 
                 <NumberPicker
                     android:id="@+id/pickMin"
@@ -148,9 +95,17 @@
                     android:layout_height="match_parent"
                     android:layout_marginLeft="25dp"
                     android:layout_marginRight="25dp"
-                    android:layout_weight="1"
+                    android:layout_centerHorizontal="true"
                     android:descendantFocusability="blocksDescendants"/>
 
+                <NumberPicker
+                    android:id="@+id/pickHour"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_marginLeft="25dp"
+                    android:layout_marginRight="25dp"
+                    android:layout_toLeftOf="@id/pickMin"
+                    android:descendantFocusability="blocksDescendants"/>
 
                 <NumberPicker
                     android:id="@+id/pickSec"
@@ -158,9 +113,38 @@
                     android:layout_height="match_parent"
                     android:layout_marginLeft="25dp"
                     android:layout_marginRight="25dp"
-                    android:layout_weight="1"
+                    android:layout_toRightOf="@id/pickMin"
                     android:descendantFocusability="blocksDescendants"/>
-            </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="H"
+                    android:textColor="@color/colorText"
+                    android:layout_alignStart="@id/pickHour"
+                    android:paddingLeft="43dp"
+                    android:layout_centerVertical="true"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="M"
+                    android:textColor="@color/colorText"
+                    android:layout_alignStart="@id/pickMin"
+                    android:paddingLeft="43dp"
+                    android:layout_centerVertical="true"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="s"
+                    android:textColor="@color/colorText"
+                    android:layout_alignStart="@id/pickSec"
+                    android:paddingLeft="43dp"
+                    android:layout_centerVertical="true"/>
+
+            </RelativeLayout>
+
         </LinearLayout>
 
 

@@ -1,26 +1,41 @@
 package com.huynhhoang.turtletimer;
 
+import android.content.res.Resources;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.NumberPicker;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.huynhhoang.turtletimer.R;
 
+import java.lang.reflect.Field;
 import java.util.concurrent.TimeUnit;
 
 import static android.R.attr.button;
+import static android.R.color.white;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
 
     private long timeCountInMilliSeconds = 1 * 60000;
+
+    private long curTime;
+    private int initHour;
+    private int initMin;
+    private int initSec;
 
     private enum TimerStatus {
         STARTED,
@@ -33,9 +48,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private ProgressBar progressBarCircle;
     private EditText editTextMinute;
     private TextView textViewTime;
-    private ImageView imageViewReset;
     private CountDownTimer countDownTimer;
     private Button buttonStartStop;
+    private Button buttonCancel;
+    private NumberPicker pickHour;
+    private NumberPicker pickMin;
+    private NumberPicker pickSec;
+    private LinearLayout initLayout;
 
 
     @Override
@@ -43,11 +62,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
         // method call to initialize the views
         initViews();
         // method call to initialize the listeners
         initListeners();
 
+        initPickHour();
+        initPickMin();
+        initPickSec();
 
     }
 
@@ -58,16 +81,114 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         progressBarCircle = (ProgressBar) findViewById(R.id.progressBarCircle);
         editTextMinute = (EditText) findViewById(R.id.editTextMinute);
         textViewTime = (TextView) findViewById(R.id.textViewTime);
-        imageViewReset = (ImageView) findViewById(R.id.imageViewReset);
         buttonStartStop = (Button) findViewById(R.id.buttonStartStop);
+        buttonCancel = (Button) findViewById(R.id.buttonCancel);
+        pickHour = (NumberPicker) findViewById(R.id.pickHour);
+        pickMin = (NumberPicker) findViewById(R.id.pickMin);
+        pickSec = (NumberPicker) findViewById(R.id.pickSec);
+        initLayout = (LinearLayout) findViewById(R.id.initLayout);
     }
 
     /**
      * method to initialize the click listeners
      */
     private void initListeners() {
-        imageViewReset.setOnClickListener(this);
         buttonStartStop.setOnClickListener(this);
+        buttonCancel.setOnClickListener(this);
+    }
+
+    private void initPickHour() {
+        //Populate NumberPicker values from minimum and maximum value range
+        //Set the minimum and maximum value of NumberPicker
+        pickHour.setMinValue(0);
+        pickHour.setMaxValue(23);
+
+        //Set numberpicker text and divider colors
+        setNumberPickerTextColor(pickHour, Color.WHITE);
+        setDividerColor(pickHour, Color.CYAN);
+
+        //Gets whether the selector wheel wraps when reaching the min/max value.
+        pickHour.setWrapSelectorWheel(false);
+
+        //Makes all all numbers double digits
+        pickHour.setFormatter(new NumberPicker.Formatter() {
+            @Override
+            public String format(int i) {
+                return String.format("%02d", i);
+            }
+        });
+
+
+        //Set a value change listener for NumberPicker
+        pickHour.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+            @Override
+            public void onValueChange(NumberPicker picker, int oldVal, int newVal){
+                //set initial hour to the new value
+                initHour = newVal;
+            }
+        });
+    }
+
+    private void initPickMin() {
+        //Populate NumberPicker values from minimum and maximum value range
+        //Set the minimum and maximum value of NumberPicker
+        pickMin.setMinValue(00);
+        pickMin.setMaxValue(60);
+
+        //Set numberpicker text and divider colors
+        setNumberPickerTextColor(pickMin, Color.WHITE);
+        setDividerColor(pickMin, Color.CYAN);
+
+        //Gets whether the selector wheel wraps when reaching the min/max value.
+        pickMin.setWrapSelectorWheel(true);
+
+        //Makes all all numbers double digits
+        pickMin.setFormatter(new NumberPicker.Formatter() {
+            @Override
+            public String format(int i) {
+                return String.format("%02d", i);
+            }
+        });
+
+        //Set a value change listener for NumberPicker
+        pickMin.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+            @Override
+            public void onValueChange(NumberPicker picker, int oldVal, int newVal){
+                //set initial minute to the new value
+                initMin = newVal;
+            }
+        });
+    }
+
+    private void initPickSec() {
+        //Populate NumberPicker values from minimum and maximum value range
+        //Set the minimum and maximum value of NumberPicker
+        pickSec.setMinValue(00);
+        pickSec.setMaxValue(60);
+
+        //Set numberpicker text and divider colors
+        setNumberPickerTextColor(pickSec, Color.WHITE);
+        setDividerColor(pickSec, Color.CYAN);
+
+        //Gets whether the selector wheel wraps when reaching the min/max value.
+        pickSec.setWrapSelectorWheel(true);
+
+        //Makes all all numbers double digits
+        pickSec.setFormatter(new NumberPicker.Formatter() {
+            @Override
+            public String format(int i) {
+                return String.format("%02d", i);
+            }
+        });
+
+        //Set a value change listener for NumberPicker
+        pickSec.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+            @Override
+            public void onValueChange(NumberPicker picker, int oldVal, int newVal){
+                //set initial min to the new value
+                initSec = newVal;
+            }
+        });
     }
 
     /**
@@ -78,21 +199,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
-            case R.id.imageViewReset:
-                reset();
-                break;
             case R.id.buttonStartStop:
                 startStop();
                 break;
+            case R.id.buttonCancel:
+                cancelTimer();
+                break;
         }
-    }
-
-    /**
-     * method to reset count down timer
-     */
-    private void reset() {
-        stopCountDownTimer();
-        startCountDownTimer();
     }
 
 
@@ -106,8 +219,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             setTimerValues();
             // call to initialize the progress bar values
             setProgressBarValues();
-            // showing the reset icon
-            imageViewReset.setVisibility(View.VISIBLE);
             // changing start text to pause text when clicked
             buttonStartStop.setText("PAUSE");
             // making edit text not editable
@@ -115,14 +226,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             // changing the timer status to started
             timerStatus = TimerStatus.STARTED;
             // call to start the count down timer
+
+            //set visibility of initLayout to Gone; make progressbar visible
+            initLayout.setVisibility(View.GONE);
+            proBarVisible();
+
             startCountDownTimer();
 
         } else if (timerStatus == TimerStatus.STARTED){
 
-            // hiding the reset icon
-            imageViewReset.setVisibility(View.GONE);
             // change PAUSE text to START when clicked
-            buttonStartStop.setText("START");
+            buttonStartStop.setText("CONTINUE");
             // making edit text editable
             editTextMinute.setEnabled(true);
             // changing the timer status to stopped
@@ -133,10 +247,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             buttonStartStop.setText("PAUSE");
             editTextMinute.setEnabled(false);
             timerStatus = TimerStatus.STARTED;
-            startCountDownTimer();
-
+            continueCountDownTimer();
         }
 
+    }
+
+    private void proBarVisible() {
+        progressBarCircle.setVisibility(View.VISIBLE);
+        editTextMinute.setVisibility(View.VISIBLE);
+        textViewTime.setVisibility(View.VISIBLE);
+    }
+
+    private void proBarGone() {
+        progressBarCircle.setVisibility(View.GONE);
+        editTextMinute.setVisibility(View.GONE);
+        textViewTime.setVisibility(View.GONE);
     }
 
     /**
@@ -144,15 +269,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      */
     private void setTimerValues() {
         int time = 0;
-        if (!editTextMinute.getText().toString().isEmpty()) {
-            // fetching value from edit text and type cast to integer
-            time = Integer.parseInt(editTextMinute.getText().toString().trim());
-        } else {
-            // toast message to fill edit text
-            Toast.makeText(getApplicationContext(), getString(R.string.message_minutes), Toast.LENGTH_LONG).show();
-        }
-        // assigning values after converting to milliseconds
-        timeCountInMilliSeconds = time * 60 * 1000;
+//        if (!editTextMinute.getText().toString().isEmpty()) {
+//            // fetching value from edit text and type cast to integer
+//            time = Integer.parseInt(editTextMinute.getText().toString().trim());
+//        } else {
+//            // toast message to fill edit text
+//            Toast.makeText(getApplicationContext(), getString(R.string.message_minutes), Toast.LENGTH_LONG).show();
+//        }
+
+        time = (initHour * 60 * 60) + (initMin * 60) + (initSec);
+
+//        // assigning values after converting to milliseconds
+        timeCountInMilliSeconds = time * 1000;
     }
 
     /**
@@ -165,8 +293,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onTick(long millisUntilFinished) {
 
                 textViewTime.setText(hmsTimeFormatter(millisUntilFinished));
-
                 progressBarCircle.setProgress((int) (millisUntilFinished / 1000));
+                // save the current time
+                curTime = millisUntilFinished;
 
             }
 
@@ -176,8 +305,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 textViewTime.setText(hmsTimeFormatter(timeCountInMilliSeconds));
                 // call to initialize the progress bar values
                 setProgressBarValues();
-                // hiding the reset icon
-                imageViewReset.setVisibility(View.GONE);
                 // making edit text editable
                 editTextMinute.setEnabled(true);
                 // changing the timer status to stopped
@@ -195,6 +322,65 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         countDownTimer.cancel();
     }
 
+
+    /**
+     * method to continue count down timer
+     */
+    private void continueCountDownTimer() {
+        // sets the countDownTimer to wherever onTick was paused
+        countDownTimer = new CountDownTimer(curTime, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                //sets text and progressbarcircle
+                textViewTime.setText(hmsTimeFormatter(millisUntilFinished));
+                progressBarCircle.setProgress((int) (millisUntilFinished / 1000));
+                // save the current time
+                curTime = millisUntilFinished;
+
+            }
+
+            @Override
+            public void onFinish() {
+
+                textViewTime.setText(hmsTimeFormatter(timeCountInMilliSeconds));
+                // call to initialize the progress bar values
+                setProgressBarValues();
+                // making edit text editable
+                editTextMinute.setEnabled(true);
+                // changing the timer status to stopped
+                timerStatus = TimerStatus.STOPPED;
+            }
+
+        }.start();
+        countDownTimer.start();
+    }
+
+    /**
+     * method to cancel count down timer
+     */
+    private void cancelTimer() {
+
+        // call to initialize the timer values
+        setTimerValues();
+        // call to initialize the progress bar values
+        setProgressBarValues();
+        // set textViewTime to the initial minutes
+        textViewTime.setText(hmsTimeFormatter(timeCountInMilliSeconds));
+        // changing start text to pause text when clicked
+        buttonStartStop.setText("START");
+        // making edit text not editable
+        editTextMinute.setEnabled(true);
+        // changing the timer status to started
+        timerStatus = TimerStatus.STOPPED;
+        // call to start the count down timer
+        countDownTimer.cancel();
+
+        proBarGone();
+        initLayout.setVisibility(View.VISIBLE);
+
+    }
+
+
     /**
      * method to set circular progress bar values
      */
@@ -202,6 +388,64 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         progressBarCircle.setMax((int) timeCountInMilliSeconds / 1000);
         progressBarCircle.setProgress((int) timeCountInMilliSeconds / 1000);
+    }
+
+    /**
+     * changes numberpicker text color
+     */
+    public static boolean setNumberPickerTextColor(NumberPicker numberPicker, int color)
+    {
+        final int count = numberPicker.getChildCount();
+        for(int i = 0; i < count; i++){
+            View child = numberPicker.getChildAt(i);
+            if(child instanceof EditText){
+                try{
+                    Field selectorWheelPaintField = numberPicker.getClass()
+                            .getDeclaredField("mSelectorWheelPaint");
+                    selectorWheelPaintField.setAccessible(true);
+                    ((Paint)selectorWheelPaintField.get(numberPicker)).setColor(color);
+                    ((EditText)child).setTextColor(color);
+                    numberPicker.invalidate();
+                    return true;
+                }
+                catch(NoSuchFieldException e){
+                    Log.w("setNumberPickerTextColor", e);
+                }
+                catch(IllegalAccessException e){
+                    Log.w("setNumberPickerTextColor", e);
+                }
+                catch(IllegalArgumentException e){
+                    Log.w("setNumberPickerTextColor", e);
+                }
+            }
+        }
+        return false;
+    }
+
+
+    /**
+     * changes numberpicker divider color
+     */
+    private void setDividerColor(NumberPicker picker, int color) {
+
+        java.lang.reflect.Field[] pickerFields = NumberPicker.class.getDeclaredFields();
+        for (java.lang.reflect.Field pf : pickerFields) {
+            if (pf.getName().equals("mSelectionDivider")) {
+                pf.setAccessible(true);
+                try {
+                    ColorDrawable colorDrawable = new ColorDrawable(color);
+                    pf.set(picker, colorDrawable);
+                } catch (IllegalArgumentException e) {
+                    e.printStackTrace();
+                } catch (Resources.NotFoundException e) {
+                    e.printStackTrace();
+                }
+                catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+                break;
+            }
+        }
     }
 
 
