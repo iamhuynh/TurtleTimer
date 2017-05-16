@@ -51,16 +51,6 @@
             android:textColor="@color/colorYellow"
             android:textSize="40sp" />
 
-        <ImageView
-            android:id="@+id/imageViewReset"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:layout_below="@+id/textViewTime"
-            android:layout_centerInParent="true"
-            android:layout_marginTop="30dp"
-            android:src="@drawable/icon_reset"
-            android:visibility="gone" />
-
     </RelativeLayout>
 
     <RelativeLayout
@@ -83,7 +73,7 @@
             android:layout_alignParentLeft="true"
             android:layout_alignRight="@+id/center_bottom"
             android:layout_marginLeft="10dp"
-            android:onClick="clickStartStop"
+            android:layout_marginStart="10dp"
             android:layout_marginBottom="5dp"
             android:text="START" />
 
@@ -95,6 +85,7 @@
             android:layout_alignParentBottom="true"
             android:layout_alignParentRight="true"
             android:layout_marginRight="10dp"
+            android:layout_marginEnd="10dp"
             android:layout_marginBottom="5dp"
             android:text="CANCEL" />
 
