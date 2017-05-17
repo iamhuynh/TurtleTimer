@@ -1,15 +1,20 @@
 package com.huynhhoang.turtletimer;
 
+import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.ColorDrawable;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -17,12 +22,14 @@ import android.widget.LinearLayout;
 import android.widget.NumberPicker;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.huynhhoang.turtletimer.R;
 
 import java.lang.reflect.Field;
+import java.util.Timer;
 import java.util.concurrent.TimeUnit;
 
 import static android.R.attr.button;
@@ -32,6 +39,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
     private long timeCountInMilliSeconds = 1 * 60000;
+    private int getAlarmSoundSelected = 0;
 
     private long curTime;
     private int initHour;
@@ -41,10 +49,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private enum TimerStatus {
         STARTED,
         PAUSED,
-        STOPPED
+        STOPPED,
+        STOPALARM
     }
 
     private TimerStatus timerStatus = TimerStatus.STOPPED;
+    private MediaPlayer alarmSound = null;
 
     private ProgressBar progressBarCircle;
     private TextView textViewTime;
@@ -56,6 +66,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private NumberPicker pickMin;
     private NumberPicker pickSec;
     private LinearLayout initLayout;
+    private Spinner alarmSoundSpinner;
+    private Spinner alertSpinner;
+    private Spinner autoTextSpinner;
+    private Spinner contactSpinner;
+    private Vibrator vibratePhone;
+
 
 
     @Override
@@ -73,6 +89,43 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         initPickMin();
         initPickSec();
 
+        ArrayAdapter adapter = ArrayAdapter.createFromResource(this, R.array.alarmArray, R.layout.spinner_item);
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+        alarmSoundSpinner.setAdapter(adapter);
+
+        alarmSoundSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener()
+        {
+            @Override
+
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long l)
+            {
+                //use this if i want to get the string
+                // getAlarmSoundSelected = parent.getItemAtPosition(position).toString();
+                // use this to get the value in the array of the selected spinner
+                getAlarmSoundSelected = position;
+
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView)
+            {
+
+            }
+        });
+
+
+        ArrayAdapter adapterAlert = ArrayAdapter.createFromResource(this, R.array.alertArray, R.layout.spinner_item);
+        adapterAlert.setDropDownViewResource(R.layout.spinner_dropdown_item);
+        alertSpinner.setAdapter(adapterAlert);
+
+        ArrayAdapter adapterText = ArrayAdapter.createFromResource(this, R.array.autoTextArray, R.layout.spinner_item);
+        adapterText.setDropDownViewResource(R.layout.spinner_dropdown_item);
+        autoTextSpinner.setAdapter(adapterText);
+
+        ArrayAdapter adapterContact = ArrayAdapter.createFromResource(this, R.array.contactArray, R.layout.spinner_item);
+        adapterContact.setDropDownViewResource(R.layout.spinner_dropdown_item);
+        contactSpinner.setAdapter(adapterContact);
+
     }
 
     /**
@@ -88,6 +141,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         pickMin = (NumberPicker) findViewById(R.id.pickMin);
         pickSec = (NumberPicker) findViewById(R.id.pickSec);
         initLayout = (LinearLayout) findViewById(R.id.initLayout);
+        alarmSoundSpinner = (Spinner) findViewById(R.id.alarmSoundSpinner);
+        alertSpinner = (Spinner) findViewById(R.id.alertSpinner);
+        autoTextSpinner = (Spinner) findViewById(R.id.autoTextSpinner);
+        contactSpinner = (Spinner) findViewById(R.id.contactSpinner);
+        vibratePhone = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
     }
 
     /**
@@ -251,6 +309,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             timerStatus = TimerStatus.STARTED;
             cancelTimerGone();
             continueCountDownTimer();
+        } else if (timerStatus == TimerStatus.STOPALARM) {
+            buttonStartStop.setText("START");
+            timerStatus = TimerStatus.STOPPED;
+            managerOfSound(-1);
+            cancelTimer();
         }
 
     }
@@ -296,10 +359,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onFinish() {
 
+                // reset text view and progress bar
+                textViewTime.setText("00:00:00");
+                progressBarCircle.setProgress(0);
                 // changing the timer status to stopped
                 timerStatus = TimerStatus.STOPPED;
                 // cancel count down timer
-                cancelTimer();
+                stopAlarm();
+                // Toast "Timer Finished!" to the bottom
+                Toast toast = Toast.makeText(getApplicationContext(),"Timer Finished!",
+                        Toast.LENGTH_SHORT);
+                toast.setGravity(Gravity.CENTER, 0, 0);
+                toast.show();
+                //chooses sound to play when finished
+                managerOfSound(getAlarmSoundSelected);
+
             }
 
         }.start();
@@ -332,12 +406,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             @Override
             public void onFinish() {
-
-                textViewTime.setText(hmsTimeFormatter(timeCountInMilliSeconds));
-                // call to initialize the progress bar values
-                setProgressBarValues();
+                // reset text view and progress bar
+                textViewTime.setText("00:00:00");
+                progressBarCircle.setProgress(0);
                 // changing the timer status to stopped
                 timerStatus = TimerStatus.STOPPED;
+                // cancel count down timer
+                stopAlarm();
+                // Toast "Timer Finished!" to the bottom
+                Toast toast = Toast.makeText(getApplicationContext(),"Timer Finished!",
+                        Toast.LENGTH_SHORT);
+                toast.setGravity(Gravity.CENTER, 0, 0);
+                toast.show();
+                //chooses sound to play when finished
+                managerOfSound(getAlarmSoundSelected);
             }
 
         }.start();
@@ -366,6 +448,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         cancelTimerGone();
         initLayout.setVisibility(View.VISIBLE);
 
+    }
+
+    private void stopAlarm(){
+        buttonStartStop.setText("STOP ALARM");
+        timerStatus = TimerStatus.STOPALARM;
     }
 
     private void cancelTimerVisible() {
@@ -444,6 +531,37 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             }
         }
+    }
+
+
+    /**
+     * Manager of Sounds
+     */
+    protected void managerOfSound(int theSound) {
+
+        if (alarmSound != null) {
+            alarmSound.reset();
+            alarmSound.release();
+        }
+
+        if (theSound == -1)
+            alarmSound = null;
+        else if (theSound == 0)
+            alarmSound = MediaPlayer.create(this, R.raw.synthesizer);
+        else if (theSound == 1)
+            alarmSound = MediaPlayer.create(this, R.raw.morning);
+        else if (theSound == 2)
+            alarmSound = MediaPlayer.create(this, R.raw.rhythm);
+        else if (theSound == 3)
+            alarmSound = MediaPlayer.create(this, R.raw.executive);
+        else if (theSound == 4)
+            vibratePhone.vibrate(10000);
+
+
+
+        if (theSound != -1)
+            alarmSound.start();
+
     }
 
 
