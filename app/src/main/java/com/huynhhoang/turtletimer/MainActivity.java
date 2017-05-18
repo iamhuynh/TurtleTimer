@@ -35,18 +35,23 @@ import java.util.concurrent.TimeUnit;
 
 import static android.R.attr.button;
 import static android.R.color.white;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
 
     private long timeCountInMilliSeconds = 1 * 60000;
     private int getAlarmSoundSelected = 0;
+    private int getAutoTextSelected = 0;
 
 
-    private long curTime;
+    private long getTimeLeft;
     private int initHour = 0;
     private int initMin = 0;
     private int initSec = 0;
+    private int timerHourLeft = 0;
+    private int timerMinuteLeft = 0;
+    private int timerSecondLeft = 0;
 
     private enum TimerStatus {
         STARTED,
@@ -68,6 +73,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private NumberPicker pickMin;
     private NumberPicker pickSec;
     private LinearLayout initLayout;
+    private RelativeLayout timerLayout;
     private Spinner alarmSoundSpinner;
     private Spinner alertSpinner;
     private Spinner autoTextSpinner;
@@ -75,6 +81,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Vibrator vibratePhone;
     private TextView textAlarmTime;
     private TextView textAmPm;
+    private TextView textAlarmTime2;
+    private TextView textAmPm2;
 
 
 
@@ -93,7 +101,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         initPickMin();
         initPickSec();
 
-        textAlarmTime.setText(setClockTime(initHour, initMin));
+        textAlarmTime.setText(setClockTime(initHour, initMin, initSec));
 
         ArrayAdapter adapter = ArrayAdapter.createFromResource(this, R.array.alarmArray, R.layout.spinner_item);
         adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
@@ -109,9 +117,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 // getAlarmSoundSelected = parent.getItemAtPosition(position).toString();
                 // use this to get the value in the array of the selected spinner
                 getAlarmSoundSelected = position;
-
             }
-
             @Override
             public void onNothingSelected(AdapterView<?> adapterView)
             {
@@ -127,6 +133,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ArrayAdapter adapterText = ArrayAdapter.createFromResource(this, R.array.autoTextArray, R.layout.spinner_item);
         adapterText.setDropDownViewResource(R.layout.spinner_dropdown_item);
         autoTextSpinner.setAdapter(adapterText);
+
+        alarmSoundSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener()
+        {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long l)
+            {
+                //use this if i want to get the string
+                // getAlarmSoundSelected = parent.getItemAtPosition(position).toString();
+                // use this to get the value in the array of the selected spinner
+                getAlarmSoundSelected = position;
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView)
+            {
+
+            }
+        });
 
         ArrayAdapter adapterContact = ArrayAdapter.createFromResource(this, R.array.contactArray, R.layout.spinner_item);
         adapterContact.setDropDownViewResource(R.layout.spinner_dropdown_item);
@@ -147,6 +170,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         pickMin = (NumberPicker) findViewById(R.id.pickMin);
         pickSec = (NumberPicker) findViewById(R.id.pickSec);
         initLayout = (LinearLayout) findViewById(R.id.initLayout);
+        timerLayout = (RelativeLayout) findViewById(R.id.timerLayout);
         alarmSoundSpinner = (Spinner) findViewById(R.id.alarmSoundSpinner);
         alertSpinner = (Spinner) findViewById(R.id.alertSpinner);
         autoTextSpinner = (Spinner) findViewById(R.id.autoTextSpinner);
@@ -154,6 +178,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         vibratePhone = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         textAlarmTime = (TextView) findViewById(R.id.textAlarmTime);
         textAmPm = (TextView) findViewById(R.id.textAmPM);
+        textAlarmTime2 = (TextView) findViewById(R.id.textAlarmTime2);
+        textAmPm2 = (TextView) findViewById(R.id.textAmPM2);
     }
 
     /**
@@ -192,7 +218,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 //set initial hour to the new value
                 initHour = newVal;
                 // change the top clock time
-                textAlarmTime.setText(setClockTime(initHour, initMin));
+                textAlarmTime.setText(setClockTime(initHour, initMin, initSec));
             }
         });
     }
@@ -224,8 +250,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onValueChange(NumberPicker picker, int oldVal, int newVal){
                 //set initial minute to the new value
                 initMin = newVal;
-                //
-                textAlarmTime.setText(setClockTime(initHour, initMin));
+                // change the top clock time
+                textAlarmTime.setText(setClockTime(initHour, initMin, initSec));
             }
         });
     }
@@ -257,6 +283,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onValueChange(NumberPicker picker, int oldVal, int newVal){
                 //set initial min to the new value
                 initSec = newVal;
+                // change the top clock time
+                textAlarmTime.setText(setClockTime(initHour, initMin, initSec));
             }
         });
     }
@@ -284,6 +312,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      */
     private void startStop() {
         if (timerStatus == TimerStatus.STOPPED) {
+            /**
+             * When the timer is at the initial screen, initializes values according
+             * to the number picker.
+             */
+
 
             // call to initialize the timer values
             setTimerValues();
@@ -293,11 +326,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             buttonStartStop.setText("PAUSE");
             // changing the timer status to started
             timerStatus = TimerStatus.STARTED;
-            // call to start the count down timer
+            // call to initialize clock time
+            textAlarmTime2.setText(setClockTime(initHour, initMin, initSec));
 
             //set visibility of initLayout to Gone; make progressbar visible
-            initLayout.setVisibility(View.GONE);
-            proBarVisible();
+            switchInitToTimer();
             cancelTimerGone();
 
             //check if timer was set (has to be greater than 0 seconds)
@@ -305,9 +338,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 timeCountInMilliSeconds = 1;
             }
 
+
             startCountDownTimer();
 
         } else if (timerStatus == TimerStatus.STARTED){
+            /**
+             * When the Timer Status is active, pauses the timer
+             */
 
             // change PAUSE text to START when clicked
             buttonStartStop.setText("CONTINUE");
@@ -317,27 +354,51 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             stopCountDownTimer();
 
         } else if (timerStatus == TimerStatus.PAUSED) {
+
+            /*
+             * When the timer is PAUSED
+             * unpauses the timer by:
+             * changing status from PAUSE to STARTED
+             * disabling the cancel button, continue count down timer
+             */
+
             buttonStartStop.setText("PAUSE");
             timerStatus = TimerStatus.STARTED;
+            msUntilFinish(getTimeLeft);
+            textAlarmTime2.setText(setClockTime(timerHourLeft, timerMinuteLeft, timerSecondLeft));
             cancelTimerGone();
             continueCountDownTimer();
+
         } else if (timerStatus == TimerStatus.STOPALARM) {
+
+            /**
+             * When the timer finishes and you click the STOP ALARM button
+             * changes the status from STOPALARM to START
+             * calls cancelTimer() which returns timer to initial state (initial state of app)
+             */
             buttonStartStop.setText("START");
             timerStatus = TimerStatus.STOPPED;
             managerOfSound(-1);
+            enableSpinners();
             cancelTimer();
         }
 
     }
 
-    private void proBarVisible() {
-        progressBarCircle.setVisibility(View.VISIBLE);
-        textViewTime.setVisibility(View.VISIBLE);
+    /**
+     * method to switch layout from TimerLayout to InitialLayout
+     */
+    private void switchInitToTimer() {
+        initLayout.setVisibility(View.GONE);
+        timerLayout.setVisibility(View.VISIBLE);
     }
 
-    private void proBarGone() {
-        progressBarCircle.setVisibility(View.GONE);
-        textViewTime.setVisibility(View.GONE);
+    /**
+     * method to switch layout from initialLayout to TimerLayout
+     */
+    private void switchTimerToInit() {
+        timerLayout.setVisibility(View.GONE);
+        initLayout.setVisibility(View.VISIBLE);
     }
 
     /**
@@ -357,14 +418,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      */
     private void startCountDownTimer() {
 
+        //disable spinners
+        disableSpinners();
+
         countDownTimer = new CountDownTimer(timeCountInMilliSeconds, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
 
                 textViewTime.setText(hmsTimeFormatter(millisUntilFinished));
                 progressBarCircle.setProgress((int) (millisUntilFinished / 1000));
-                // save the current time
-                curTime = millisUntilFinished;
+                // save the time left until finish
+                getTimeLeft = millisUntilFinished;
 
             }
 
@@ -396,6 +460,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * method to stop count down timer
      */
     private void stopCountDownTimer() {
+        //disable spinners and pause countdown
+        enableSpinners();
         countDownTimer.cancel();
     }
 
@@ -404,15 +470,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * method to continue count down timer
      */
     private void continueCountDownTimer() {
+        //disable spinners
+        disableSpinners();
+
         // sets the countDownTimer to wherever onTick was paused
-        countDownTimer = new CountDownTimer(curTime, 1000) {
+        countDownTimer = new CountDownTimer(getTimeLeft, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
                 //sets text and progressbarcircle
                 textViewTime.setText(hmsTimeFormatter(millisUntilFinished));
                 progressBarCircle.setProgress((int) (millisUntilFinished / 1000));
                 // save the current time
-                curTime = millisUntilFinished;
+                getTimeLeft = millisUntilFinished;
+                // sets the clockFinish to however many minutes left
+                msUntilFinish(getTimeLeft);
+                textAlarmTime2.setText(setClockTime(timerHourLeft, timerMinuteLeft, timerSecondLeft));
 
             }
 
@@ -456,9 +528,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // call to start the count down timer
         countDownTimer.cancel();
 
-        proBarGone();
+        switchTimerToInit();
         cancelTimerGone();
-        initLayout.setVisibility(View.VISIBLE);
 
     }
 
@@ -576,6 +647,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+    private void disableSpinners() {
+        alarmSoundSpinner.setEnabled(false);
+        alertSpinner.setEnabled(false);
+        autoTextSpinner.setEnabled(false);
+        contactSpinner.setEnabled(false);
+
+    }
+
+    private void enableSpinners() {
+        alarmSoundSpinner.setEnabled(true);
+        alertSpinner.setEnabled(true);
+        autoTextSpinner.setEnabled(true);
+        contactSpinner.setEnabled(true);
+    }
+
 
     /**
      * method to convert millisecond to time format
@@ -586,13 +672,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private String hmsTimeFormatter(long milliSeconds) {
 
         String hms = String.format("%02d:%02d:%02d",
-                TimeUnit.MILLISECONDS.toHours(milliSeconds),
-                TimeUnit.MILLISECONDS.toMinutes(milliSeconds) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(milliSeconds)),
-                TimeUnit.MILLISECONDS.toSeconds(milliSeconds) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(milliSeconds)));
+                MILLISECONDS.toHours(milliSeconds),
+                MILLISECONDS.toMinutes(milliSeconds) - TimeUnit.HOURS.toMinutes(MILLISECONDS.toHours(milliSeconds)),
+                MILLISECONDS.toSeconds(milliSeconds) - TimeUnit.MINUTES.toSeconds(MILLISECONDS.toMinutes(milliSeconds)));
 
         return hms;
 
+    }
 
+    private int msUntilFinish(long millisUntilFinish) {
+        timerHourLeft = (int) TimeUnit.MILLISECONDS.toHours(millisUntilFinish);
+        timerMinuteLeft = (int) TimeUnit.MILLISECONDS.toMinutes(millisUntilFinish) - (timerHourLeft * 60);
+        timerSecondLeft = (int) TimeUnit.MILLISECONDS.toSeconds(millisUntilFinish) - (timerMinuteLeft * 60);
+
+        return timerHourLeft;
     }
 
 
@@ -601,16 +694,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * @param addHour, addMinute // taken from global variables
      * when the numberPicker changes, it changes the clock time
      */
-    private String setClockTime(int addHour, int addMinute) {
+    private String setClockTime(int addHour, int addMinute, int addSecond) {
 
         // initialize what the current time of day is
         int setHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
         int setMinute = Calendar.getInstance().get(Calendar.MINUTE);
+        int setSecond = Calendar.getInstance().get(Calendar.SECOND);
         // 12 hour day; split for formating reasons
         int standardClock = 12;
 
         //sets the current hour + the hours we want to add
         setHour = setHour + addHour;
+
+        // checks if the current second + added seconds is greater than 60
+        // if it is, add 1 to the minute and get seconds % 60
+        if(setSecond + addSecond >= 60) {
+            setSecond = (setSecond + addSecond) % 60;
+            setMinute = setMinute + 1;
+        } else {
+            setSecond = setSecond + addMinute;
+        }
+
 
         // checks if the current minute + added minutes is greater than 60
         // if it is, add 1 to the hour and get minute % 60
@@ -625,8 +729,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // sets AM/PM depending on the time of day
         if((setHour / standardClock) == 1 || (setHour / standardClock == 3))  {
             textAmPm.setText("PM");
+            textAmPm2.setText("PM");
         } else {
             textAmPm.setText("AM");
+            textAmPm2.setText("AM");
         }
 
         // checks if the hour is 12. if not; set the hour in standard time formatting
