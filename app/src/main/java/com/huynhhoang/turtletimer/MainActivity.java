@@ -43,6 +43,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private long timeCountInMilliSeconds = 1 * 60000;
     private int getAlarmSoundSelected = 0;
     private int getAutoTextSelected = 0;
+    private String m_Text = "";
 
 
     private long getTimeLeft;
@@ -134,7 +135,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         adapterText.setDropDownViewResource(R.layout.spinner_dropdown_item);
         autoTextSpinner.setAdapter(adapterText);
 
-        alarmSoundSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener()
+        autoTextSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener()
         {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long l)
@@ -142,7 +143,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 //use this if i want to get the string
                 // getAlarmSoundSelected = parent.getItemAtPosition(position).toString();
                 // use this to get the value in the array of the selected spinner
-                getAlarmSoundSelected = position;
+                getAutoTextSelected = position;
+
+
             }
             @Override
             public void onNothingSelected(AdapterView<?> adapterView)
