@@ -29,6 +29,7 @@ import android.widget.Toast;
 import com.huynhhoang.turtletimer.R;
 
 import java.lang.reflect.Field;
+import java.util.Calendar;
 import java.util.Timer;
 import java.util.concurrent.TimeUnit;
 
@@ -41,10 +42,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private long timeCountInMilliSeconds = 1 * 60000;
     private int getAlarmSoundSelected = 0;
 
+
     private long curTime;
-    private int initHour;
-    private int initMin;
-    private int initSec;
+    private int initHour = 0;
+    private int initMin = 0;
+    private int initSec = 0;
 
     private enum TimerStatus {
         STARTED,
@@ -71,6 +73,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Spinner autoTextSpinner;
     private Spinner contactSpinner;
     private Vibrator vibratePhone;
+    private TextView textAlarmTime;
+    private TextView textAmPm;
 
 
 
@@ -88,6 +92,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         initPickHour();
         initPickMin();
         initPickSec();
+
+        textAlarmTime.setText(setClockTime(initHour, initMin));
 
         ArrayAdapter adapter = ArrayAdapter.createFromResource(this, R.array.alarmArray, R.layout.spinner_item);
         adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
@@ -146,6 +152,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         autoTextSpinner = (Spinner) findViewById(R.id.autoTextSpinner);
         contactSpinner = (Spinner) findViewById(R.id.contactSpinner);
         vibratePhone = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        textAlarmTime = (TextView) findViewById(R.id.textAlarmTime);
+        textAmPm = (TextView) findViewById(R.id.textAmPM);
     }
 
     /**
@@ -183,6 +191,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onValueChange(NumberPicker picker, int oldVal, int newVal){
                 //set initial hour to the new value
                 initHour = newVal;
+                // change the top clock time
+                textAlarmTime.setText(setClockTime(initHour, initMin));
             }
         });
     }
@@ -214,6 +224,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onValueChange(NumberPicker picker, int oldVal, int newVal){
                 //set initial minute to the new value
                 initMin = newVal;
+                //
+                textAlarmTime.setText(setClockTime(initHour, initMin));
             }
         });
     }
@@ -579,6 +591,56 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 TimeUnit.MILLISECONDS.toSeconds(milliSeconds) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(milliSeconds)));
 
         return hms;
+
+
+    }
+
+
+    /*
+     * class to set the top clock time in the app
+     * @param addHour, addMinute // taken from global variables
+     * when the numberPicker changes, it changes the clock time
+     */
+    private String setClockTime(int addHour, int addMinute) {
+
+        // initialize what the current time of day is
+        int setHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+        int setMinute = Calendar.getInstance().get(Calendar.MINUTE);
+        // 12 hour day; split for formating reasons
+        int standardClock = 12;
+
+        //sets the current hour + the hours we want to add
+        setHour = setHour + addHour;
+
+        // checks if the current minute + added minutes is greater than 60
+        // if it is, add 1 to the hour and get minute % 60
+        if(setMinute + addMinute >= 60) {
+            setMinute = (setMinute + addMinute) % 60;
+            setHour = setHour + 1;
+        } else {
+            setMinute = setMinute + addMinute;
+        }
+
+
+        // sets AM/PM depending on the time of day
+        if((setHour / standardClock) == 1 || (setHour / standardClock == 3))  {
+            textAmPm.setText("PM");
+        } else {
+            textAmPm.setText("AM");
+        }
+
+        // checks if the hour is 12. if not; set the hour in standard time formatting
+        if(setHour % 12 == 0) {
+            setHour = 12;
+        } else {
+            setHour = setHour % standardClock;
+        }
+
+        // throws string so that it can set the text
+        String hm = String.format("%02d:%02d",
+                setHour, setMinute);
+
+        return hm;
 
 
     }
