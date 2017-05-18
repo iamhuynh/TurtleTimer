@@ -12,30 +12,69 @@
         android:layout_height="0dp"
         android:layout_weight="8" >
 
+        <RelativeLayout
+            android:id="@+id/timerLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
 
-        <ProgressBar
-            android:id="@+id/progressBarCircle"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="270dp"
-            android:layout_height="270dp"
-            android:layout_centerInParent="true"
-            android:background="@drawable/drawable_circle_dark_blue"
-            android:indeterminate="false"
-            android:max="100"
-            android:progress="100"
-            android:progressDrawable="@drawable/drawable_circle_bar"
-            android:rotation="-90"
-            android:visibility="gone" />
+            <ProgressBar
+                android:id="@+id/progressBarCircle"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="270dp"
+                android:layout_height="270dp"
+                android:layout_centerInParent="true"
+                android:background="@drawable/drawable_circle_dark_blue"
+                android:indeterminate="false"
+                android:max="100"
+                android:progress="100"
+                android:progressDrawable="@drawable/drawable_circle_bar"
+                android:rotation="-90"/>
 
-        <TextView
-            android:id="@+id/textViewTime"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:text="00:00:00"
-            android:textColor="@color/colorTimer"
-            android:textSize="40sp"
-            android:visibility="gone" />
+            <TextView
+                android:id="@+id/textViewTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="00:00:00"
+                android:textColor="@color/colorTimer"
+                android:textSize="40sp" />
+
+            <TextView
+                android:id="@+id/textAlarmTime2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="12:15"
+                android:textColor="@color/colorText"
+                android:layout_centerInParent="true"
+                android:layout_marginBottom="35dp"
+                android:layout_above="@id/textViewTime"
+                android:layout_marginLeft="2dp" />
+
+            <ImageView
+                android:id="@+id/iconClock2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toLeftOf="@id/textAlarmTime2"
+                android:layout_centerInParent="true"
+                android:layout_marginBottom="35dp"
+                android:layout_above="@id/textViewTime"
+                android:src="@drawable/ic_alarm_white_18dp" />
+
+            <TextView
+                android:id="@+id/textAmPM2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PM"
+                android:textColor="@color/colorText"
+                android:layout_toRightOf="@id/textAlarmTime2"
+                android:layout_above="@id/textViewTime"
+                android:layout_marginBottom="35dp"
+                android:layout_centerInParent="true"
+                android:layout_marginLeft="2dp"/>
+
+
+        </RelativeLayout>
 
 
         <LinearLayout
@@ -45,15 +84,44 @@
             android:orientation="vertical"
             android:weightSum="10">
 
-            <LinearLayout
+            <RelativeLayout
+                android:layout_marginTop="15dp"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
                 android:weightSum="3"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:gravity="center">
+                
+                <ImageView
+                    android:id="@+id/iconClock"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_alarm_white_18dp" />
+
+                <TextView
+                    android:id="@+id/textAlarmTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="12:15"
+                    android:textColor="@color/colorText"
+                    android:layout_centerInParent="true"
+                    android:layout_marginLeft="2dp"
+                    android:layout_toRightOf="@id/iconClock"/>
+
+                <TextView
+                    android:id="@+id/textAmPM"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PM"
+                    android:textColor="@color/colorText"
+                    android:layout_toRightOf="@id/textAlarmTime"
+                    android:layout_centerInParent="true"
+                    android:layout_marginLeft="2dp"/>
 
 
-            </LinearLayout>
+
+            </RelativeLayout>
 
             <RelativeLayout
                 android:layout_width="match_parent"
@@ -95,6 +163,7 @@
                     android:text="H"
                     android:textColor="@color/colorText"
                     android:layout_alignStart="@id/pickHour"
+                    android:layout_alignLeft="@id/pickHour"
                     android:paddingLeft="43dp"
                     android:layout_centerVertical="true"/>
 
@@ -104,6 +173,7 @@
                     android:text="M"
                     android:textColor="@color/colorText"
                     android:layout_alignStart="@id/pickMin"
+                    android:layout_alignLeft="@id/pickMin"
                     android:paddingLeft="43dp"
                     android:layout_centerVertical="true"/>
 
@@ -113,6 +183,7 @@
                     android:text="S"
                     android:textColor="@color/colorText"
                     android:layout_alignStart="@id/pickSec"
+                    android:layout_alignLeft="@id/pickSec"
                     android:paddingLeft="43dp"
                     android:layout_centerVertical="true"/>
 
@@ -144,6 +215,7 @@
                 android:textColor="@color/colorText"
                 android:gravity="center"
                 android:layout_alignParentStart="true"
+                android:layout_alignParentLeft="true"
                 android:textSize="20sp"/>
 
             <Spinner
@@ -156,21 +228,110 @@
         </RelativeLayout>
 
 
-
-        <EditText
+        <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1"/>
+            android:layout_weight="1"
+            android:orientation="horizontal">
 
-        <EditText
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="12dp"
+                android:text="Alert:"
+                android:textColor="@color/colorText"
+                android:gravity="center"
+                android:layout_alignParentStart="true"
+                android:textSize="20sp"/>
+
+            <Spinner
+                android:id="@+id/alertSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                style="@style/Widget.AppCompat.Spinner.Underlined"
+                android:layout_gravity="right"/>
+
+        </RelativeLayout>
+
+        <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1"/>
+            android:layout_weight="1"
+            android:orientation="horizontal">
 
-        <EditText
+            <TextView
+                android:id="@+id/textTextReply"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="12dp"
+                android:text="Text Reply:"
+                android:textColor="@color/colorText"
+                android:gravity="center"
+                android:layout_alignParentStart="true"
+                android:textSize="20sp"/>
+
+            <Spinner
+                android:id="@+id/autoTextSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                style="@style/Widget.AppCompat.Spinner.Underlined"
+                android:layout_gravity="right"/>
+
+            <Button
+                android:id="@+id/setAutoTextButton"
+                android:layout_width="65dp"
+                android:layout_height="match_parent"
+                android:text="SET"
+                android:textSize="10sp"
+                android:visibility="gone"/>
+
+            <Button
+                android:id="@+id/cancelAutoTextButton"
+                android:layout_width="65dp"
+                android:padding="0dp"
+                android:layout_height="match_parent"
+                android:textSize="10sp"
+                android:text="Cancel"
+                android:layout_toRightOf="@id/setAutoTextButton"
+                android:visibility="gone"/>
+
+            <EditText
+                android:id="@+id/autoTextEditBox"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="right"
+                android:maxLength="95"
+                android:textColor="@color/colorText"
+                android:layout_toRightOf="@id/cancelAutoTextButton"
+                android:visibility="gone" />
+
+
+        </RelativeLayout>
+
+        <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1"/>
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="12dp"
+                android:text="Respond to:"
+                android:textColor="@color/colorText"
+                android:gravity="center"
+                android:layout_alignParentStart="true"
+                android:textSize="20sp"/>
+
+            <Spinner
+                android:id="@+id/contactSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                style="@style/Widget.AppCompat.Spinner.Underlined"
+                android:layout_gravity="right"/>
+
+        </RelativeLayout>
 
         <View
             android:layout_width="match_parent"
@@ -181,6 +342,7 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1.5"
+            android:layout_gravity="bottom"
             android:orientation="horizontal"
             android:weightSum="2">
 
