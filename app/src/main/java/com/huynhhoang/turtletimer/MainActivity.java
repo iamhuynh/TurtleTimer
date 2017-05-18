@@ -35,6 +35,9 @@ import java.util.concurrent.TimeUnit;
 
 import static android.R.attr.button;
 import static android.R.color.white;
+import static android.R.string.cancel;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -43,8 +46,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private long timeCountInMilliSeconds = 1 * 60000;
     private int getAlarmSoundSelected = 0;
     private int getAutoTextSelected = 0;
-    private String m_Text = "";
-
 
     private long getTimeLeft;
     private int initHour = 0;
@@ -84,6 +85,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView textAmPm;
     private TextView textAlarmTime2;
     private TextView textAmPm2;
+    private EditText autoTextEditBox;
+    private Button setAutoTextButton;
+    private Button cancelAutoTextButton;
+    private TextView textTextReply;
 
 
 
@@ -144,6 +149,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 // getAlarmSoundSelected = parent.getItemAtPosition(position).toString();
                 // use this to get the value in the array of the selected spinner
                 getAutoTextSelected = position;
+                if (getAutoTextSelected == 9) {
+                    // switch the spinner to edit custom text
+                    switchSpinnerToCustom();
+                }
 
 
             }
@@ -183,6 +192,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         textAmPm = (TextView) findViewById(R.id.textAmPM);
         textAlarmTime2 = (TextView) findViewById(R.id.textAlarmTime2);
         textAmPm2 = (TextView) findViewById(R.id.textAmPM2);
+        autoTextEditBox = (EditText) findViewById(R.id.autoTextEditBox);
+        setAutoTextButton = (Button) findViewById(R.id.setAutoTextButton);
+        cancelAutoTextButton = (Button) findViewById(R.id.cancelAutoTextButton);
+        textTextReply = (TextView) findViewById(R.id.textTextReply);
     }
 
     /**
@@ -191,6 +204,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void initListeners() {
         buttonStartStop.setOnClickListener(this);
         buttonCancel.setOnClickListener(this);
+        cancelAutoTextButton.setOnClickListener(this);
+        setAutoTextButton.setOnClickListener(this);
     }
 
     private void initPickHour() {
@@ -306,6 +321,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.buttonCancel:
                 cancelTimer();
                 break;
+            case R.id.cancelAutoTextButton:
+                cancelAutoTB();
+                break;
+            case R.id.setAutoTextButton:
+                setAutoTB();
+                break;
         }
     }
 
@@ -387,6 +408,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
     }
+
+    /**
+     * When custom auto text reply is initiated, sets the user input to custom string
+     * need to do:
+     * make list into a hashmap?
+     * able to change custom -> (custom1) user entered text here
+     * remove custom
+     * add custom1 in it's place
+     */
+    public void setAutoTB() {
+        switchCustomToSpinner();
+    }
+
+    /**
+     * When custom auto reply is initiated, give user the ability to cancel (erases custom)
+     */
+    public void cancelAutoTB() {
+        switchCustomToSpinner();
+    }
+
 
     /**
      * method to switch layout from TimerLayout to InitialLayout
@@ -620,6 +661,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
 
+
     /**
      * Manager of Sounds
      */
@@ -665,6 +707,31 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         contactSpinner.setEnabled(true);
     }
 
+    public void switchCustomToSpinner() {
+        autoTextSpinner.setVisibility(View.VISIBLE);
+        textTextReply.setVisibility(View.VISIBLE);
+        autoTextEditBox.setVisibility(View.GONE);
+        setAutoTextButton.setVisibility(View.GONE);
+        cancelAutoTextButton.setVisibility(View.GONE);
+        enableSpinners();
+        buttonStartStop.setEnabled(TRUE);
+        buttonCancel.setEnabled(TRUE);
+    }
+
+    /**
+     * Switches text reply spinner to editText so user can set custom text message
+     */
+    public void switchSpinnerToCustom() {
+        autoTextSpinner.setVisibility(View.GONE);
+        textTextReply.setVisibility(View.GONE);
+        autoTextEditBox.setVisibility(View.VISIBLE);
+        setAutoTextButton.setVisibility(View.VISIBLE);
+        cancelAutoTextButton.setVisibility(View.VISIBLE);
+        disableSpinners();
+        buttonStartStop.setEnabled(FALSE);
+        buttonCancel.setEnabled(FALSE);
+    }
+
 
     /**
      * method to convert millisecond to time format
@@ -690,6 +757,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         return timerHourLeft;
     }
+
+
 
 
     /*
