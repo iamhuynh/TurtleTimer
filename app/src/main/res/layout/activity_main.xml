@@ -10,7 +10,7 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="8" >
+        android:layout_weight="8">
 
         <RelativeLayout
             android:id="@+id/timerLayout"
@@ -29,7 +29,7 @@
                 android:max="100"
                 android:progress="100"
                 android:progressDrawable="@drawable/drawable_circle_bar"
-                android:rotation="-90"/>
+                android:rotation="-90" />
 
             <TextView
                 android:id="@+id/textViewTime"
@@ -44,34 +44,34 @@
                 android:id="@+id/textAlarmTime2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="12:15"
-                android:textColor="@color/colorText"
+                android:layout_above="@id/textViewTime"
                 android:layout_centerInParent="true"
                 android:layout_marginBottom="35dp"
-                android:layout_above="@id/textViewTime"
-                android:layout_marginLeft="2dp" />
+                android:layout_marginLeft="2dp"
+                android:text="12:15"
+                android:textColor="@color/colorText" />
 
             <ImageView
                 android:id="@+id/iconClock2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_toLeftOf="@id/textAlarmTime2"
+                android:layout_above="@id/textViewTime"
                 android:layout_centerInParent="true"
                 android:layout_marginBottom="35dp"
-                android:layout_above="@id/textViewTime"
+                android:layout_toLeftOf="@id/textAlarmTime2"
                 android:src="@drawable/ic_alarm_white_18dp" />
 
             <TextView
                 android:id="@+id/textAmPM2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="PM"
-                android:textColor="@color/colorText"
-                android:layout_toRightOf="@id/textAlarmTime2"
                 android:layout_above="@id/textViewTime"
-                android:layout_marginBottom="35dp"
                 android:layout_centerInParent="true"
-                android:layout_marginLeft="2dp"/>
+                android:layout_marginBottom="35dp"
+                android:layout_marginLeft="2dp"
+                android:layout_toRightOf="@id/textAlarmTime2"
+                android:text="PM"
+                android:textColor="@color/colorText" />
 
 
         </RelativeLayout>
@@ -85,14 +85,14 @@
             android:weightSum="10">
 
             <RelativeLayout
-                android:layout_marginTop="15dp"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
+                android:layout_marginTop="15dp"
                 android:layout_weight="1"
-                android:weightSum="3"
+                android:gravity="center"
                 android:orientation="vertical"
-                android:gravity="center">
-                
+                android:weightSum="3">
+
                 <ImageView
                     android:id="@+id/iconClock"
                     android:layout_width="wrap_content"
@@ -103,22 +103,21 @@
                     android:id="@+id/textAlarmTime"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="12:15"
-                    android:textColor="@color/colorText"
                     android:layout_centerInParent="true"
                     android:layout_marginLeft="2dp"
-                    android:layout_toRightOf="@id/iconClock"/>
+                    android:layout_toRightOf="@id/iconClock"
+                    android:text="12:15"
+                    android:textColor="@color/colorText" />
 
                 <TextView
                     android:id="@+id/textAmPM"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="PM"
-                    android:textColor="@color/colorText"
-                    android:layout_toRightOf="@id/textAlarmTime"
                     android:layout_centerInParent="true"
-                    android:layout_marginLeft="2dp"/>
-
+                    android:layout_marginLeft="2dp"
+                    android:layout_toRightOf="@id/textAlarmTime"
+                    android:text="PM"
+                    android:textColor="@color/colorText" />
 
 
             </RelativeLayout>
@@ -126,18 +125,18 @@
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
+                android:layout_weight="8"
                 android:orientation="horizontal"
-                android:padding="20dp"
-                android:layout_weight="8">
+                android:padding="20dp">
 
                 <NumberPicker
                     android:id="@+id/pickMin"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
+                    android:layout_centerHorizontal="true"
                     android:layout_marginLeft="25dp"
                     android:layout_marginRight="25dp"
-                    android:layout_centerHorizontal="true"
-                    android:descendantFocusability="blocksDescendants"/>
+                    android:descendantFocusability="blocksDescendants" />
 
                 <NumberPicker
                     android:id="@+id/pickHour"
@@ -146,7 +145,7 @@
                     android:layout_marginLeft="25dp"
                     android:layout_marginRight="25dp"
                     android:layout_toLeftOf="@id/pickMin"
-                    android:descendantFocusability="blocksDescendants"/>
+                    android:descendantFocusability="blocksDescendants" />
 
                 <NumberPicker
                     android:id="@+id/pickSec"
@@ -155,37 +154,37 @@
                     android:layout_marginLeft="25dp"
                     android:layout_marginRight="25dp"
                     android:layout_toRightOf="@id/pickMin"
-                    android:descendantFocusability="blocksDescendants"/>
+                    android:descendantFocusability="blocksDescendants" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="H"
-                    android:textColor="@color/colorText"
-                    android:layout_alignStart="@id/pickHour"
                     android:layout_alignLeft="@id/pickHour"
+                    android:layout_alignStart="@id/pickHour"
+                    android:layout_centerVertical="true"
                     android:paddingLeft="43dp"
-                    android:layout_centerVertical="true"/>
+                    android:text="H"
+                    android:textColor="@color/colorText" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="M"
-                    android:textColor="@color/colorText"
-                    android:layout_alignStart="@id/pickMin"
                     android:layout_alignLeft="@id/pickMin"
+                    android:layout_alignStart="@id/pickMin"
+                    android:layout_centerVertical="true"
                     android:paddingLeft="43dp"
-                    android:layout_centerVertical="true"/>
+                    android:text="M"
+                    android:textColor="@color/colorText" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="S"
-                    android:textColor="@color/colorText"
-                    android:layout_alignStart="@id/pickSec"
                     android:layout_alignLeft="@id/pickSec"
+                    android:layout_alignStart="@id/pickSec"
+                    android:layout_centerVertical="true"
                     android:paddingLeft="43dp"
-                    android:layout_centerVertical="true"/>
+                    android:text="S"
+                    android:textColor="@color/colorText" />
 
             </RelativeLayout>
 
@@ -198,8 +197,8 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="8"
-        android:weightSum="7"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:weightSum="7">
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -210,20 +209,20 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
                 android:layout_marginLeft="12dp"
+                android:gravity="center"
                 android:text="Alarm Sound:"
                 android:textColor="@color/colorText"
-                android:gravity="center"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentLeft="true"
-                android:textSize="20sp"/>
+                android:textSize="20sp" />
 
             <Spinner
                 android:id="@+id/alarmSoundSpinner"
+                style="@style/Widget.AppCompat.Spinner.Underlined"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                style="@style/Widget.AppCompat.Spinner.Underlined"
-                android:layout_gravity="right"/>
+                android:layout_gravity="right" />
 
         </RelativeLayout>
 
@@ -237,19 +236,19 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
+                android:layout_alignParentStart="true"
                 android:layout_marginLeft="12dp"
+                android:gravity="center"
                 android:text="Alert:"
                 android:textColor="@color/colorText"
-                android:gravity="center"
-                android:layout_alignParentStart="true"
-                android:textSize="20sp"/>
+                android:textSize="20sp" />
 
             <Spinner
                 android:id="@+id/alertSpinner"
+                style="@style/Widget.AppCompat.Spinner.Underlined"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                style="@style/Widget.AppCompat.Spinner.Underlined"
-                android:layout_gravity="right"/>
+                android:layout_gravity="right" />
 
         </RelativeLayout>
 
@@ -263,19 +262,19 @@
                 android:id="@+id/textTextReply"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
+                android:layout_alignParentStart="true"
                 android:layout_marginLeft="12dp"
+                android:gravity="center"
                 android:text="Text Reply:"
                 android:textColor="@color/colorText"
-                android:gravity="center"
-                android:layout_alignParentStart="true"
-                android:textSize="20sp"/>
+                android:textSize="20sp" />
 
             <Spinner
                 android:id="@+id/autoTextSpinner"
+                style="@style/Widget.AppCompat.Spinner.Underlined"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                style="@style/Widget.AppCompat.Spinner.Underlined"
-                android:layout_gravity="right"/>
+                android:layout_gravity="right" />
 
             <Button
                 android:id="@+id/setAutoTextButton"
@@ -283,26 +282,26 @@
                 android:layout_height="match_parent"
                 android:text="SET"
                 android:textSize="10sp"
-                android:visibility="gone"/>
+                android:visibility="gone" />
 
             <Button
                 android:id="@+id/cancelAutoTextButton"
                 android:layout_width="65dp"
-                android:padding="0dp"
                 android:layout_height="match_parent"
-                android:textSize="10sp"
-                android:text="Cancel"
                 android:layout_toRightOf="@id/setAutoTextButton"
-                android:visibility="gone"/>
+                android:padding="0dp"
+                android:text="Cancel"
+                android:textSize="10sp"
+                android:visibility="gone" />
 
             <EditText
                 android:id="@+id/autoTextEditBox"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:layout_toRightOf="@id/cancelAutoTextButton"
                 android:gravity="right"
                 android:maxLength="95"
                 android:textColor="@color/colorText"
-                android:layout_toRightOf="@id/cancelAutoTextButton"
                 android:visibility="gone" />
 
 
@@ -317,58 +316,71 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
+                android:layout_alignParentStart="true"
                 android:layout_marginLeft="12dp"
+                android:gravity="center"
                 android:text="Respond to:"
                 android:textColor="@color/colorText"
-                android:gravity="center"
-                android:layout_alignParentStart="true"
-                android:textSize="20sp"/>
+                android:textSize="20sp" />
 
             <Spinner
                 android:id="@+id/contactSpinner"
+                style="@style/Widget.AppCompat.Spinner.Underlined"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                style="@style/Widget.AppCompat.Spinner.Underlined"
-                android:layout_gravity="right"/>
+                android:layout_gravity="right" />
 
         </RelativeLayout>
-
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_marginLeft="12dp"
-                android:text="Block:"
-                android:textColor="@color/colorText"
-                android:gravity="center"
-                android:layout_alignParentStart="true"
-                android:textSize="20sp"/>
-
-            <Spinner
-                android:id="@+id/contactSpinner"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                style="@style/Widget.AppCompat.Spinner.Underlined"
-                android:layout_gravity="right"/>
-
-        </RelativeLayout>
-
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight=".5"/>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1.5"
+            android:orientation="horizontal"
+            android:weightSum="3">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:alpha=".5"
+                android:gravity="center"
+                android:text="Contacts"
+                android:textColor="@color/colorText"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:alpha=".5"
+                android:gravity="center"
+                android:text="Custom"
+                android:textColor="@color/colorText"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="Blocked"
+                android:alpha=".80"
+                android:textColor="@color/colorText"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
             android:layout_gravity="bottom"
+            android:layout_weight="1.5"
             android:orientation="horizontal"
             android:weightSum="2">
 
@@ -376,41 +388,38 @@
                 android:id="@+id/buttonStartStop"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
                 android:layout_marginBottom="5dp"
                 android:layout_marginLeft="10dp"
                 android:layout_marginStart="10dp"
+                android:layout_weight="1"
                 android:text="START" />
 
             <Button
                 android:id="@+id/buttonCancel"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
                 android:layout_marginBottom="5dp"
                 android:layout_marginEnd="10dp"
                 android:layout_marginRight="10dp"
+                android:layout_weight="1"
                 android:text="CANCEL" />
 
             <Button
                 android:id="@+id/buttonCancelTemp"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
                 android:layout_marginBottom="5dp"
-                android:color="#22FF0000"
-                 android:alpha="0.3"
-                 android:layout_marginEnd="10dp"
+                android:layout_marginEnd="10dp"
                 android:layout_marginRight="10dp"
+                android:layout_weight="1"
+                android:alpha="0.3"
+                android:color="#22FF0000"
                 android:text="CANCEL"
-                android:visibility="gone"/>
+                android:visibility="gone" />
 
         </LinearLayout>
 
-        </LinearLayout>
-
-
-
+    </LinearLayout>
 
 
 </LinearLayout>
