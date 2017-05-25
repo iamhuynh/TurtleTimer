@@ -1,6 +1,7 @@
 package com.huynhhoang.turtletimer;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -17,7 +18,6 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.NumberPicker;
 import android.widget.ProgressBar;
@@ -26,16 +26,10 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.huynhhoang.turtletimer.R;
-
 import java.lang.reflect.Field;
 import java.util.Calendar;
-import java.util.Timer;
 import java.util.concurrent.TimeUnit;
 
-import static android.R.attr.button;
-import static android.R.color.white;
-import static android.R.string.cancel;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -54,17 +48,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private int timerHourLeft = 0;
     private int timerMinuteLeft = 0;
     private int timerSecondLeft = 0;
-
-    private enum TimerStatus {
-        STARTED,
-        PAUSED,
-        STOPPED,
-        STOPALARM
-    }
-
     private TimerStatus timerStatus = TimerStatus.STOPPED;
     private MediaPlayer alarmSound = null;
-
     private ProgressBar progressBarCircle;
     private TextView textViewTime;
     private CountDownTimer countDownTimer;
@@ -79,7 +64,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Spinner alarmSoundSpinner;
     private Spinner alertSpinner;
     private Spinner autoTextSpinner;
-    private Spinner contactSpinner;
     private Vibrator vibratePhone;
     private TextView textAlarmTime;
     private TextView textAmPm;
@@ -90,7 +74,37 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button cancelAutoTextButton;
     private TextView textTextReply;
 
-
+    /**
+     * changes numberpicker text color
+     */
+    public static boolean setNumPickerTextColor(NumberPicker numberPicker, int color)
+    {
+        final int count = numberPicker.getChildCount();
+        for(int i = 0; i < count; i++){
+            View child = numberPicker.getChildAt(i);
+            if(child instanceof EditText){
+                try{
+                    Field selectorWheelPaintField = numberPicker.getClass()
+                            .getDeclaredField("mSelectorWheelPaint");
+                    selectorWheelPaintField.setAccessible(true);
+                    ((Paint)selectorWheelPaintField.get(numberPicker)).setColor(color);
+                    ((EditText)child).setTextColor(color);
+                    numberPicker.invalidate();
+                    return true;
+                }
+                catch(NoSuchFieldException e){
+                    Log.w("setNumPickerTextColor", e);
+                }
+                catch(IllegalAccessException e){
+                    Log.w("setNumPickerTextColor", e);
+                }
+                catch(IllegalArgumentException e){
+                    Log.w("setNumPickerTextColor", e);
+                }
+            }
+        }
+        return false;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -163,10 +177,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
 
-        ArrayAdapter adapterContact = ArrayAdapter.createFromResource(this, R.array.contactArray, R.layout.spinner_item);
-        adapterContact.setDropDownViewResource(R.layout.spinner_dropdown_item);
-        contactSpinner.setAdapter(adapterContact);
-
     }
 
     /**
@@ -186,7 +196,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         alarmSoundSpinner = (Spinner) findViewById(R.id.alarmSoundSpinner);
         alertSpinner = (Spinner) findViewById(R.id.alertSpinner);
         autoTextSpinner = (Spinner) findViewById(R.id.autoTextSpinner);
-        contactSpinner = (Spinner) findViewById(R.id.contactSpinner);
         vibratePhone = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         textAlarmTime = (TextView) findViewById(R.id.textAlarmTime);
         textAmPm = (TextView) findViewById(R.id.textAmPM);
@@ -329,6 +338,43 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
         }
     }
+
+    /**
+     * method to switch screens to contact list
+     */
+
+    public void onGoToContactList(View view) {
+
+        Intent getContactScreenIntent = new Intent(this, ContactScreen.class);
+
+        final int result = 1;
+
+        getContactScreenIntent.putExtra("CallingActivity", "MainActivity");
+
+        startActivityForResult(getContactScreenIntent, result);
+
+
+    }
+
+    /**
+     * method to switch screens to block list
+     */
+
+
+    public void onGoToIgnoreList(View view) {
+
+        Intent getIgnoreScreenIntent = new Intent(this, IgnoreScreen.class);
+
+        final int result = 1;
+
+        getIgnoreScreenIntent.putExtra("CallingActivity", "MainActivity");
+
+        startActivityForResult(getIgnoreScreenIntent, result);
+
+
+    }
+
+
 
 
     /**
@@ -547,6 +593,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 toast.setGravity(Gravity.CENTER, 0, 0);
                 toast.show();
                 //chooses sound to play when finished
+                // why this no work
                 managerOfSound(getAlarmSoundSelected);
             }
 
@@ -603,39 +650,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     /**
-     * changes numberpicker text color
-     */
-    public static boolean setNumPickerTextColor(NumberPicker numberPicker, int color)
-    {
-        final int count = numberPicker.getChildCount();
-        for(int i = 0; i < count; i++){
-            View child = numberPicker.getChildAt(i);
-            if(child instanceof EditText){
-                try{
-                    Field selectorWheelPaintField = numberPicker.getClass()
-                            .getDeclaredField("mSelectorWheelPaint");
-                    selectorWheelPaintField.setAccessible(true);
-                    ((Paint)selectorWheelPaintField.get(numberPicker)).setColor(color);
-                    ((EditText)child).setTextColor(color);
-                    numberPicker.invalidate();
-                    return true;
-                }
-                catch(NoSuchFieldException e){
-                    Log.w("setNumPickerTextColor", e);
-                }
-                catch(IllegalAccessException e){
-                    Log.w("setNumPickerTextColor", e);
-                }
-                catch(IllegalArgumentException e){
-                    Log.w("setNumPickerTextColor", e);
-                }
-            }
-        }
-        return false;
-    }
-
-
-    /**
      * changes numberpicker divider color
      */
     private void setDividerColor(NumberPicker picker, int color) {
@@ -659,8 +673,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }
     }
-
-
 
     /**
      * Manager of Sounds
@@ -696,7 +708,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         alarmSoundSpinner.setEnabled(false);
         alertSpinner.setEnabled(false);
         autoTextSpinner.setEnabled(false);
-        contactSpinner.setEnabled(false);
 
     }
 
@@ -704,7 +715,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         alarmSoundSpinner.setEnabled(true);
         alertSpinner.setEnabled(true);
         autoTextSpinner.setEnabled(true);
-        contactSpinner.setEnabled(true);
     }
 
     public void switchCustomToSpinner() {
@@ -732,7 +742,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         buttonCancel.setEnabled(FALSE);
     }
 
-
     /**
      * method to convert millisecond to time format
      *
@@ -757,9 +766,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         return timerHourLeft;
     }
-
-
-
 
     /*
      * class to set the top clock time in the app
@@ -820,7 +826,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         return hm;
 
+    }
 
+    private enum TimerStatus {
+        STARTED,
+        PAUSED,
+        STOPPED,
+        STOPALARM
     }
 
 
