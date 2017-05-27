@@ -11,8 +11,10 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -21,6 +23,7 @@ import android.app.AlertDialog.Builder;
 
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static android.R.attr.button;
@@ -34,12 +37,25 @@ import static android.icu.lang.UCharacter.GraphemeClusterBreak.L;
 
 public class ContactScreen extends Activity {
 
+    // Request code for READ_CONTACTS. It can be any number > 0.
+    private static final int PERMISSIONS_REQUEST_READ_CONTACTS = 100;
+    final CharSequence myList[] = { "Tea", "Coffee", "Milk" };
     private Button buttonLoadContacts;
     private Button buttonImportPopup;
     private ListView listMainContacts;
-    // Request code for READ_CONTACTS. It can be any number > 0.
-    private static final int PERMISSIONS_REQUEST_READ_CONTACTS = 100;
 
+    private ArrayList<Integer> mSelectedItems = new ArrayList<>();
+
+
+    AlertDialog mDialog = null;
+    /**
+     * This becomes false when "Select All" is selected while deselecting some other item on list.
+     */
+    boolean selectAll = true;
+    /**
+     * Number of items in array list and eventually in ListView
+     */
+    int sizeOfList;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -74,9 +90,62 @@ public class ContactScreen extends Activity {
     }
 
     public void buttonLoadContactsOntoPop() {
-        alertMultipleChoiceItems();
-    }
+        mDialog = onCreateDialog(null);
+        mDialog.show();
 
+        // we get the ListView from already shown dialog
+        final ListView listView = mDialog.getListView();
+        // ListView Item Click Listener that enables "Select all" choice
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                boolean isChecked = listView.isItemChecked(position);
+                if (position == 0) {
+                    if(selectAll) {
+                        for (int i = 1; i < sizeOfList; i++) { // we start with first element after "Select all" choice
+                            if (isChecked && !listView.isItemChecked(i)) {
+                                listView.performItemClick(listView, i, 0);
+                                mSelectedItems.add(i);
+                                Log.d("this is my array", "arr: " + mSelectedItems.toString());
+                            }
+                            else if (!isChecked && listView.isItemChecked(i)) {
+                                listView.performItemClick(listView, i, 0);
+                                if (mSelectedItems.contains(i)) {
+                                    mSelectedItems.remove(Integer.valueOf(i));
+                                    Log.d("this is my array", "cray: " + mSelectedItems.toString());
+                                }
+
+//
+                            }
+                        }
+                    }
+                } else if (position != 0) {
+                    if (!isChecked && listView.isItemChecked(0)) {
+                        // if other item is unselected while "Select all" is selected, unselect "Select all"
+                        // false, performItemClick, true is a must in order for this code to work
+                        selectAll = false;
+                        listView.performItemClick(listView, 0, 0);
+                        selectAll = true;
+                    }
+
+                    if(isChecked && !listView.isItemChecked(0)) {
+                        mSelectedItems.add(position);
+                        Log.d("queso", "queso: " + mSelectedItems.toString());
+                    }
+                    else if (!isChecked && !listView.isItemChecked(0)) {
+                        if (mSelectedItems.contains(position)) {
+                            mSelectedItems.remove(Integer.valueOf(position));
+                            Log.d("this is my array", "burrito: " + mSelectedItems.toString());
+                        }
+
+                    }
+                }
+
+
+            }
+        });
+
+    }
 
     /**
      * Show the contacts in the ListView.
@@ -130,6 +199,7 @@ public class ContactScreen extends Activity {
      */
     private List<String> getContactNames() {
         List<String> contacts = new ArrayList<>();
+        contacts.add("Select All");
         // Get the ContentResolver
         ContentResolver cr = getContentResolver();
         // Get the Cursor of all the contacts
@@ -167,13 +237,9 @@ public class ContactScreen extends Activity {
         return contacts;
     }
 
-    ArrayList<Integer> mSelectedItems;
-    final CharSequence myList[] = { "Tea", "Coffee", "Milk" };
 
-    public void alertMultipleChoiceItems(){
+    public AlertDialog onCreateDialog(Bundle savedInstanceState){
 
-        // where we will store or remove selected items
-        mSelectedItems = new ArrayList<Integer>();
         List<String> contactList = new ArrayList<String>();
 
         // Check the SDK version and whether the permission is already granted or not.
@@ -188,63 +254,30 @@ public class ContactScreen extends Activity {
         }
 
         CharSequence[] csContactList = contactList.toArray(new CharSequence[contactList.size()]);
-        AlertDialog.Builder builder = new AlertDialog.Builder(ContactScreen.this);
+        //save the size of the contact list to sizeOfList
+        sizeOfList = contactList.size();
+        final boolean bl[] = new boolean[sizeOfList];
+        final AlertDialog.Builder builder = new AlertDialog.Builder(ContactScreen.this);
 
         // set the dialog title
-        builder.setTitle("Choose One or More")
+        builder.setTitle("Choose your contacts")
 
                 // specify the list array, the items to be selected by default (null for none),
                 // and the listener through which to receive call backs when items are selected
-                // R.array.choices were set in the resources res/values/strings.xml
-                .setMultiChoiceItems(csContactList, null, new DialogInterface.OnMultiChoiceClickListener() {
-
-                    @Override
-                    public void onClick(DialogInterface dialog, int which, boolean isChecked) {
-
-                        if (isChecked) {
-                            // if the user checked the item, add it to the selected items
-                            mSelectedItems.add(which);
-                        }
-
-                        else if (mSelectedItems.contains(which)) {
-                            // else if the item is already in the array, remove it
-                            mSelectedItems.remove(Integer.valueOf(which));
-                        }
-
-                        // you can also add other codes here,
-                        // for example a tool tip that gives user an idea of what he is selecting
-                        // showToast("Just an example description.");
-                    }
-
-                })
-
+                .setMultiChoiceItems(csContactList, null, null)
                 // Set the action buttons
-                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
-
-                        // user clicked OK, so save the mSelectedItems results somewhere
-                        // here we are trying to retrieve the selected items indices
-                        String selectedIndex = "";
-                        for(Integer i : mSelectedItems){
-                            selectedIndex += i + ", ";
-                        }
-
-                        Toast toast = Toast.makeText(getBaseContext(), "Selected index: " + selectedIndex, Toast.LENGTH_LONG);
-                        toast.setGravity(Gravity.CENTER, 0, 0);
-                        toast.show();
+                        // User clicked OK, so save something here
 
                     }
                 })
-
-                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                     @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // removes the AlertDialog in the screen
-                    }
-                })
-
-                .show();
+                    public void onClick(DialogInterface dialog, int id) {}
+                });
+        return builder.create();
 
     }
 
