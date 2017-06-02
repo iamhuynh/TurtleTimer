@@ -1,16 +1,28 @@
 package com.huynhhoang.turtletimer;
 
+import android.Manifest;
+import android.app.AlertDialog;
+import android.app.NotificationManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.ColorDrawable;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Vibrator;
+import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.telephony.SmsManager;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -30,16 +42,18 @@ import java.lang.reflect.Field;
 import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
+import static android.os.Build.VERSION_CODES.N;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-
+    private int previous_notification_interrupt_setting = 3;
     private long timeCountInMilliSeconds = 1 * 60000;
     private int getAlarmSoundSelected = 0;
     private int getAutoTextSelected = 0;
+    private final static int MAX_VOLUME = 100;
+    private static final int READ_SMS_PERMISSIONS_REQUEST = 1;
+
 
     private long getTimeLeft;
     private int initHour = 0;
@@ -56,6 +70,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button buttonStartStop;
     private Button buttonCancel;
     private Button buttonCancelTemp;
+    private TextView buttonContactList;
+    private TextView buttonIgnoreList;
     private NumberPicker pickHour;
     private NumberPicker pickMin;
     private NumberPicker pickSec;
@@ -73,32 +89,49 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button setAutoTextButton;
     private Button cancelAutoTextButton;
     private TextView textTextReply;
+    AudioManager mAudioManager;
+    int originalVolume;
+    private NotificationManager notificationManager;
+
+
+
+    SmsManager smsManager = SmsManager.getDefault();
+    private static MainActivity inst;
+
+    public static MainActivity instance() {
+        return inst;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        inst = this;
+    }
+
+
+
 
     /**
      * changes numberpicker text color
      */
-    public static boolean setNumPickerTextColor(NumberPicker numberPicker, int color)
-    {
+    public static boolean setNumPickerTextColor(NumberPicker numberPicker, int color) {
         final int count = numberPicker.getChildCount();
-        for(int i = 0; i < count; i++){
+        for (int i = 0; i < count; i++) {
             View child = numberPicker.getChildAt(i);
-            if(child instanceof EditText){
-                try{
+            if (child instanceof EditText) {
+                try {
                     Field selectorWheelPaintField = numberPicker.getClass()
                             .getDeclaredField("mSelectorWheelPaint");
                     selectorWheelPaintField.setAccessible(true);
-                    ((Paint)selectorWheelPaintField.get(numberPicker)).setColor(color);
-                    ((EditText)child).setTextColor(color);
+                    ((Paint) selectorWheelPaintField.get(numberPicker)).setColor(color);
+                    ((EditText) child).setTextColor(color);
                     numberPicker.invalidate();
                     return true;
-                }
-                catch(NoSuchFieldException e){
+                } catch (NoSuchFieldException e) {
                     Log.w("setNumPickerTextColor", e);
-                }
-                catch(IllegalAccessException e){
+                } catch (IllegalAccessException e) {
                     Log.w("setNumPickerTextColor", e);
-                }
-                catch(IllegalArgumentException e){
+                } catch (IllegalArgumentException e) {
                     Log.w("setNumPickerTextColor", e);
                 }
             }
@@ -106,75 +139,180 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return false;
     }
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
         // method call to initialize the views
         initViews();
         // method call to initialize the listeners
         initListeners();
-
         initPickHour();
         initPickMin();
         initPickSec();
 
+        NotificationManager notificationManager =
+                (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
+
+        if (Build.VERSION.SDK_INT >= N
+                && !notificationManager.isNotificationPolicyAccessGranted()) {
+
+            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+            alertDialogBuilder.setMessage("Turtle Timer needs permissions to access the " +
+                    "device\'s \"Do Not Disturb\" feature to work as intended." );
+                    alertDialogBuilder.setPositiveButton("Grant",
+                            new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface arg0, int arg1) {
+
+                                    Intent intent = new Intent(
+                                            android.provider.Settings
+                                                    .ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
+
+                                    startActivity(intent);
+
+                                }
+                            });
+
+            alertDialogBuilder.setNegativeButton("Ignore",new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                }
+            });
+
+            alertDialogBuilder.setCancelable(false);
+
+            AlertDialog alertDialog = alertDialogBuilder.create();
+            alertDialog.show();
+
+        }
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.READ_SMS}, READ_SMS_PERMISSIONS_REQUEST);
+            //After this point you wait for callback in onRequestPermissionsResult(int, String[], int[]) overriden method
+        }
+
+
+
+        mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        originalVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+
+
         textAlarmTime.setText(setClockTime(initHour, initMin, initSec));
+
+        /***************               Alarm Spinner Adapter              *****************/
 
         ArrayAdapter adapter = ArrayAdapter.createFromResource(this, R.array.alarmArray, R.layout.spinner_item);
         adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         alarmSoundSpinner.setAdapter(adapter);
 
-        alarmSoundSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener()
-        {
+
+        final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        final SharedPreferences.Editor editor = preferences.edit();
+
+        getAlarmSoundSelected = preferences.getInt("sharedAlarmSound", 0);
+
+        alarmSoundSpinner.setSelection(getAlarmSoundSelected);
+
+        alarmSoundSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
 
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long l)
-            {
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long l) {
                 //use this if i want to get the string
                 // getAlarmSoundSelected = parent.getItemAtPosition(position).toString();
                 // use this to get the value in the array of the selected spinner
                 getAlarmSoundSelected = position;
+
+                editor.putInt("sharedAlarmSound", position);
+                editor.apply();
             }
+
             @Override
-            public void onNothingSelected(AdapterView<?> adapterView)
-            {
+            public void onNothingSelected(AdapterView<?> adapterView) {
 
             }
         });
 
 
+
+
+
+
+
+
+        /***************         Emergency Alert Spinner Adapter            *****************/
+
         ArrayAdapter adapterAlert = ArrayAdapter.createFromResource(this, R.array.alertArray, R.layout.spinner_item);
         adapterAlert.setDropDownViewResource(R.layout.spinner_dropdown_item);
         alertSpinner.setAdapter(adapterAlert);
+
+
+        /***************          Auto Text Spinner Adapter              *****************/
 
         ArrayAdapter adapterText = ArrayAdapter.createFromResource(this, R.array.autoTextArray, R.layout.spinner_item);
         adapterText.setDropDownViewResource(R.layout.spinner_dropdown_item);
         autoTextSpinner.setAdapter(adapterText);
 
-        autoTextSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener()
-        {
+        getAutoTextSelected = preferences.getInt("sharedAutoText", 0);
+
+        autoTextSpinner.setSelection(getAutoTextSelected);
+
+        autoTextSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long l)
-            {
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long l) {
                 //use this if i want to get the string
                 // getAlarmSoundSelected = parent.getItemAtPosition(position).toString();
                 // use this to get the value in the array of the selected spinner
                 getAutoTextSelected = position;
-                if (getAutoTextSelected == 9) {
+
+                if (getAutoTextSelected == 6) {
                     // switch the spinner to edit custom text
+                    Log.d("custom1", preferences.getString("sharedCustom"+getAutoTextSelected, ""));
+//                    autoTextEditBox.setText(preferences.getString("sharedCustom"+getAutoTextSelected, ""));
+                    autoTextEditBox.setText(preferences.getString("sharedCustom"+getAutoTextSelected, ""));
+                    switchSpinnerToCustom();
+
+                }
+
+                if (getAutoTextSelected == 7) {
+                    // switch the spinner to edit custom text
+                    Log.d("custom2", preferences.getString("sharedCustom"+getAutoTextSelected, ""));
+                    autoTextEditBox.setText(preferences.getString("sharedCustom"+getAutoTextSelected, ""));
+                    switchSpinnerToCustom();
+                }
+
+                if (getAutoTextSelected == 8) {
+                    // switch the spinner to edit custom text
+                    Log.d("custom3", preferences.getString("sharedCustom"+getAutoTextSelected, ""));
+                    autoTextEditBox.setText(preferences.getString("sharedCustom"+getAutoTextSelected, ""));
                     switchSpinnerToCustom();
                 }
 
 
-            }
-            @Override
-            public void onNothingSelected(AdapterView<?> adapterView)
-            {
+
+                if (getAutoTextSelected == 9) {
+                    // switch the spinner to edit custom text
+                    Log.d("custom4", preferences.getString("sharedCustom"+getAutoTextSelected, ""));
+                    autoTextEditBox.setText(preferences.getString("sharedCustom"+getAutoTextSelected, ""));
+                    switchSpinnerToCustom();
+                }
+
+
+                editor.putInt("sharedAutoText", position);
+                editor.apply();
+
 
             }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+
+
         });
 
     }
@@ -205,6 +343,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setAutoTextButton = (Button) findViewById(R.id.setAutoTextButton);
         cancelAutoTextButton = (Button) findViewById(R.id.cancelAutoTextButton);
         textTextReply = (TextView) findViewById(R.id.textTextReply);
+        buttonContactList = (TextView) findViewById(R.id.buttonContactList);
+        buttonIgnoreList = (TextView) findViewById(R.id.buttonIgnoreList);
     }
 
     /**
@@ -238,12 +378,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
 
+
+
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        final SharedPreferences.Editor editor = preferences.edit();
+
+        initHour = preferences.getInt("sharedHour", 0);
+
+        pickHour.setValue(initHour);
+
         //Set a value change listener for NumberPicker
         pickHour.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
             @Override
-            public void onValueChange(NumberPicker picker, int oldVal, int newVal){
+            public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
                 //set initial hour to the new value
                 initHour = newVal;
+
+                editor.putInt("sharedHour", newVal);
+                editor.apply();
+
+
                 // change the top clock time
                 textAlarmTime.setText(setClockTime(initHour, initMin, initSec));
             }
@@ -271,12 +425,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
 
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        final SharedPreferences.Editor editor = preferences.edit();
+
+        initMin = preferences.getInt("sharedMin", 0);
+
+        pickMin.setValue(initMin);
+
         //Set a value change listener for NumberPicker
         pickMin.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
             @Override
-            public void onValueChange(NumberPicker picker, int oldVal, int newVal){
-                //set initial minute to the new value
+            public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
+                //set initial min to the new value
                 initMin = newVal;
+
+                editor.putInt("sharedMin", newVal);
+                editor.apply();
+
+
                 // change the top clock time
                 textAlarmTime.setText(setClockTime(initHour, initMin, initSec));
             }
@@ -304,12 +470,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
 
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        final SharedPreferences.Editor editor = preferences.edit();
+
+        initSec = preferences.getInt("sharedSec", 0);
+
+        pickSec.setValue(initSec);
+
         //Set a value change listener for NumberPicker
         pickSec.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
             @Override
-            public void onValueChange(NumberPicker picker, int oldVal, int newVal){
-                //set initial min to the new value
+            public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
+                //set initial hour to the new value
                 initSec = newVal;
+
+                editor.putInt("sharedSec", newVal);
+                editor.apply();
+
+
                 // change the top clock time
                 textAlarmTime.setText(setClockTime(initHour, initMin, initSec));
             }
@@ -375,8 +553,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
 
-
-
     /**
      * method to start and stop count down timer
      */
@@ -404,14 +580,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             cancelTimerGone();
 
             //check if timer was set (has to be greater than 0 seconds)
-            if (timeCountInMilliSeconds == 0){
+            if (timeCountInMilliSeconds == 0) {
                 timeCountInMilliSeconds = 1;
             }
 
-
             startCountDownTimer();
 
-        } else if (timerStatus == TimerStatus.STARTED){
+        } else if (timerStatus == TimerStatus.STARTED) {
             /**
              * When the Timer Status is active, pauses the timer
              */
@@ -422,6 +597,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             timerStatus = TimerStatus.PAUSED;
             cancelTimerVisible();
             stopCountDownTimer();
+            buttonContactList.setEnabled(false);
+            buttonIgnoreList.setEnabled(false);
 
         } else if (timerStatus == TimerStatus.PAUSED) {
 
@@ -437,6 +614,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             msUntilFinish(getTimeLeft);
             textAlarmTime2.setText(setClockTime(timerHourLeft, timerMinuteLeft, timerSecondLeft));
             cancelTimerGone();
+            buttonContactList.setEnabled(true);
+            buttonIgnoreList.setEnabled(true);
             continueCountDownTimer();
 
         } else if (timerStatus == TimerStatus.STOPALARM) {
@@ -448,9 +627,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
              */
             buttonStartStop.setText("START");
             timerStatus = TimerStatus.STOPPED;
-            managerOfSound(-1);
+            stopSound();
             enableSpinners();
             cancelTimer();
+            buttonContactList.setEnabled(true);
+            buttonIgnoreList.setEnabled(true);
         }
 
     }
@@ -464,6 +645,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * add custom1 in it's place
      */
     public void setAutoTB() {
+        String getCustomInput = autoTextEditBox.getText().toString();
+
+        Log.d("TestHere", getCustomInput);
+
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        final SharedPreferences.Editor editor = preferences.edit();
+
+        editor.putString("sharedCustom"+getAutoTextSelected, getCustomInput);
+        editor.apply();
         switchCustomToSpinner();
     }
 
@@ -510,6 +700,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         //disable spinners
         disableSpinners();
+        buttonContactList.setEnabled(false);
+        buttonIgnoreList.setEnabled(false);
+        //disable sound
+        SilencePhone();
 
         countDownTimer = new CountDownTimer(timeCountInMilliSeconds, 1000) {
             @Override
@@ -525,6 +719,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onFinish() {
 
+                //enable sound
+                UnsilencePhone();
+
                 // reset text view and progress bar
                 textViewTime.setText("00:00:00");
                 progressBarCircle.setProgress(0);
@@ -533,10 +730,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 // cancel count down timer
                 stopAlarm();
                 // Toast "Timer Finished!" to the bottom
-                Toast toast = Toast.makeText(getApplicationContext(),"Timer Finished!",
+                Toast toast = Toast.makeText(getApplicationContext(), "Timer Finished!",
                         Toast.LENGTH_SHORT);
                 toast.setGravity(Gravity.CENTER, 0, 0);
                 toast.show();
+
                 //chooses sound to play when finished
                 managerOfSound(getAlarmSoundSelected);
 
@@ -550,6 +748,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * method to stop count down timer
      */
     private void stopCountDownTimer() {
+        //enable sounds
+        UnsilencePhone();
         //disable spinners and pause countdown
         enableSpinners();
         countDownTimer.cancel();
@@ -560,8 +760,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * method to continue count down timer
      */
     private void continueCountDownTimer() {
+        //disable sounds
+        SilencePhone();
         //disable spinners
         disableSpinners();
+        buttonContactList.setEnabled(false);
+        buttonIgnoreList.setEnabled(false);
 
         // sets the countDownTimer to wherever onTick was paused
         countDownTimer = new CountDownTimer(getTimeLeft, 1000) {
@@ -580,6 +784,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             @Override
             public void onFinish() {
+                //enable sound
+                UnsilencePhone();
                 // reset text view and progress bar
                 textViewTime.setText("00:00:00");
                 progressBarCircle.setProgress(0);
@@ -588,13 +794,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 // cancel count down timer
                 stopAlarm();
                 // Toast "Timer Finished!" to the bottom
-                Toast toast = Toast.makeText(getApplicationContext(),"Timer Finished!",
+                Toast toast = Toast.makeText(getApplicationContext(), "Timer Finished!",
                         Toast.LENGTH_SHORT);
                 toast.setGravity(Gravity.CENTER, 0, 0);
                 toast.show();
                 //chooses sound to play when finished
                 // why this no work
                 managerOfSound(getAlarmSoundSelected);
+
             }
 
         }.start();
@@ -606,6 +813,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      */
     private void cancelTimer() {
 
+        //enable sound
+        UnsilencePhone();
         // call to initialize the timer values
         setTimerValues();
         // call to initialize the progress bar values
@@ -624,7 +833,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
-    private void stopAlarm(){
+    private void stopAlarm() {
         buttonStartStop.setText("STOP ALARM");
         timerStatus = TimerStatus.STOPALARM;
     }
@@ -637,6 +846,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void cancelTimerGone() {
         buttonCancelTemp.setVisibility(View.VISIBLE);
         buttonCancel.setVisibility(View.GONE);
+        buttonContactList.setEnabled(true);
+        buttonIgnoreList.setEnabled(true);
     }
 
 
@@ -665,8 +876,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     e.printStackTrace();
                 } catch (Resources.NotFoundException e) {
                     e.printStackTrace();
-                }
-                catch (IllegalAccessException e) {
+                } catch (IllegalAccessException e) {
                     e.printStackTrace();
                 }
                 break;
@@ -679,14 +889,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      */
     protected void managerOfSound(int theSound) {
 
-        if (alarmSound != null) {
-            alarmSound.reset();
-            alarmSound.release();
+        // set the volume to what we want it to be.  In this case it's max volume for the alarm stream.
+        mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (int) (mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC) * .7), 0);
+
+        if(alarmSound != null) {
+            try{
+                alarmSound.stop(); //error
+                alarmSound.reset();
+                alarmSound.release();
+            }catch(Exception e){
+                Log.d("Nitif Activity", e.toString());
+            }
         }
 
-        if (theSound == -1)
+
+        if (theSound == -1) {
             alarmSound = null;
-        else if (theSound == 0)
+        } else if (theSound == 0)
             alarmSound = MediaPlayer.create(this, R.raw.synthesizer);
         else if (theSound == 1)
             alarmSound = MediaPlayer.create(this, R.raw.morning);
@@ -694,13 +913,49 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             alarmSound = MediaPlayer.create(this, R.raw.rhythm);
         else if (theSound == 3)
             alarmSound = MediaPlayer.create(this, R.raw.executive);
-        else if (theSound == 4)
-            vibratePhone.vibrate(10000);
+        else if (theSound == 4) {
+            long[] pattern = {0, 1500, 1000, 1250, 1000, 1250, 1000, 1250, 1000,
+                    1500, 1000, 1250, 1000, 1250, 1000, 1250, 1000,
+                    1500, 1000, 1250, 1000, 1250, 1000, 1250, 1000,
+                    1500, 1000, 1250, 1000, 1250, 1000, 1250, 1000,
+                    1500, 1000, 1250, 1000, 1250, 1000, 1250, 1000,
+                    1500, 1000, 1250, 1000, 1250, 1000, 1250, 1000,
+                    1500, 1000, 1250, 1000, 1250, 1000, 1250, 1000,
+                    1500, 1000, 1250, 1000, 1250, 1000, 1250, 1000,
+                    1500, 1000, 1250, 1000, 1250, 1000, 1250, 1000,
+                    1500, 1000, 1250, 1000, 1250, 1000, 1250, 1000,
+                    1500, 1000, 1250, 1000, 1250, 1000, 1250, 1000,
+                    1500, 1000, 1250, 1000, 1250, 1000, 1250, 1000};
+            vibratePhone.vibrate(pattern, -1);
+        } else {
+            alarmSound = null;
+        }
 
-
-
-        if (theSound != -1)
+        // only start an alarmSound when a sound is selected
+        // need to change this if adding more sounds, starting a alarmSound set to null
+        // will crash your app
+        if (theSound >= 0 && theSound <= 3) {
+            alarmSound.setLooping(true);
             alarmSound.start();
+        }
+
+    }
+
+    protected void stopSound() {
+        mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalVolume, 0);
+        vibratePhone.cancel();
+
+        if (alarmSound != null) {
+            try {
+                alarmSound.setLooping(false);
+                if (alarmSound.isPlaying()) {
+                    alarmSound.stop();
+                }
+            }
+            catch(Exception e){
+                Log.d("Alarm Sound Activity", e.toString());
+            }
+        }
 
     }
 
@@ -708,6 +963,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         alarmSoundSpinner.setEnabled(false);
         alertSpinner.setEnabled(false);
         autoTextSpinner.setEnabled(false);
+
 
     }
 
@@ -724,8 +980,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setAutoTextButton.setVisibility(View.GONE);
         cancelAutoTextButton.setVisibility(View.GONE);
         enableSpinners();
-        buttonStartStop.setEnabled(TRUE);
-        buttonCancel.setEnabled(TRUE);
+        buttonStartStop.setEnabled(true);
+        buttonCancel.setEnabled(true);
     }
 
     /**
@@ -738,8 +994,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setAutoTextButton.setVisibility(View.VISIBLE);
         cancelAutoTextButton.setVisibility(View.VISIBLE);
         disableSpinners();
-        buttonStartStop.setEnabled(FALSE);
-        buttonCancel.setEnabled(FALSE);
+        buttonStartStop.setEnabled(false);
+        buttonCancel.setEnabled(false);
     }
 
     /**
@@ -786,7 +1042,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         // checks if the current second + added seconds is greater than 60
         // if it is, add 1 to the minute and get seconds % 60
-        if(setSecond + addSecond >= 60) {
+        if (setSecond + addSecond >= 60) {
             setSecond = (setSecond + addSecond) % 60;
             setMinute = setMinute + 1;
         } else {
@@ -796,7 +1052,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         // checks if the current minute + added minutes is greater than 60
         // if it is, add 1 to the hour and get minute % 60
-        if(setMinute + addMinute >= 60) {
+        if (setMinute + addMinute >= 60) {
             setMinute = (setMinute + addMinute) % 60;
             setHour = setHour + 1;
         } else {
@@ -805,7 +1061,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
         // sets AM/PM depending on the time of day
-        if((setHour / standardClock) == 1 || (setHour / standardClock == 3))  {
+        if ((setHour / standardClock) == 1 || (setHour / standardClock == 3)) {
             textAmPm.setText("PM");
             textAmPm2.setText("PM");
         } else {
@@ -814,7 +1070,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
         // checks if the hour is 12. if not; set the hour in standard time formatting
-        if(setHour % 12 == 0) {
+        if (setHour % 12 == 0) {
             setHour = 12;
         } else {
             setHour = setHour % standardClock;
@@ -828,11 +1084,77 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+
+    public void onClickCancelAutoText(View view) {
+    }
+
     private enum TimerStatus {
         STARTED,
         PAUSED,
         STOPPED,
         STOPALARM
+    }
+
+    private void SilencePhone() {
+
+        NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            previous_notification_interrupt_setting = notificationManager.getCurrentInterruptionFilter();
+            Log.d("TAG", "What is this" + previous_notification_interrupt_setting);
+            notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE);
+        }
+        else{
+            AudioManager am = (AudioManager) getBaseContext().getSystemService(AUDIO_SERVICE);
+            am.setRingerMode(AudioManager.RINGER_MODE_SILENT);
+        }
+    }
+
+    private void UnsilencePhone() {
+        NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL);
+        }
+        else{
+            AudioManager am = (AudioManager) getBaseContext().getSystemService(AUDIO_SERVICE);
+            am.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
+        }
+
+
+    }
+
+    public void getPermissionToReadSMS() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS)
+                != PackageManager.PERMISSION_GRANTED) {
+            if (shouldShowRequestPermissionRationale(
+                    Manifest.permission.READ_SMS)) {
+                Toast.makeText(this, "Please allow permission!", Toast.LENGTH_SHORT).show();
+            }
+            requestPermissions(new String[]{Manifest.permission.READ_SMS},
+                    READ_SMS_PERMISSIONS_REQUEST);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String permissions[],
+                                           @NonNull int[] grantResults) {
+        // Make sure it's our original READ_CONTACTS request
+        if (requestCode == READ_SMS_PERMISSIONS_REQUEST) {
+            if (grantResults.length == 1 &&
+                    grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Read SMS permission granted", Toast.LENGTH_SHORT).show();
+//                refreshSmsInbox();
+            } else {
+                Toast.makeText(this, "Read SMS permission denied", Toast.LENGTH_SHORT).show();
+            }
+
+        } else {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
     }
 
 
